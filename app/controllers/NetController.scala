@@ -25,7 +25,7 @@ class NetController @Inject()(cc: ControllerComponents)(
     Ok(views.html.index())
   }
 
-  def socket: WebSocket = WebSocket.accept[String, String] { request =>
+  def controlSocket: WebSocket = WebSocket.accept[String, String] { request =>
     ActorFlow.actorRef { out =>
       ControlSocket.props(out, monitor)
     }

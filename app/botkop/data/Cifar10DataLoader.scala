@@ -13,12 +13,12 @@ import scala.util.Random
 
 class Cifar10DataLoader(folder: String,
                         miniBatchSize: Int,
-                        entryGate: ActorRef,
+                        // entryGate: ActorRef,
                         seed: Long = 231)
     extends DataLoader
-    with Actor
-    with ActorLogging {
-
+    // with Actor
+    // with ActorLogging {
+{
   Random.setSeed(seed)
 
   val labels = List(
@@ -87,6 +87,7 @@ class Cifar10DataLoader(folder: String,
       }
   }
 
+  /*
   override def receive: Receive = accept(nextBatch)
 
   def accept(batch: (Tensor, Tensor)): Receive = {
@@ -94,9 +95,11 @@ class Cifar10DataLoader(folder: String,
       entryGate forward Forward(batch)
       context become accept(nextBatch)
   }
+  */
 
 }
 
+/*
 object Cifar10DataLoader {
   def props(folder: String,
             miniBatchSize: Int,
@@ -104,3 +107,4 @@ object Cifar10DataLoader {
             seed: Long = 231) =
     Props(new Cifar10DataLoader(folder, miniBatchSize, entryGate, seed))
 }
+*/

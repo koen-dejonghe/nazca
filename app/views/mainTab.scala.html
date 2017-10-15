@@ -1,0 +1,67 @@
+<div id="main-tab" class="tab-pane fade in active container-fluid">
+    <br/>
+    <div class="row content">
+
+        <div class="col-md-4">
+            <div class="well well-sm">
+                <button class="btn btn-default" id="start-button">Start</button>
+                <button class="btn btn-default" id="pause-button">Pause</button>
+                <button class="btn btn-default" id="quit-button">Quit</button>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+        $(function () {
+            var controlSocket;
+
+            var controlSocketOnOpen = function () {
+                console.log("control websocket opened");
+            };
+
+            var controlSocketOnClose = function () {
+                console.log('control websocket disconnected');
+                setControlSocket()
+            };
+
+            var controlSocketOnMessage = function (msg) {
+                // console.log('pdf websocket received message: ' + msg.data);
+                dispatcher(JSON.parse(msg.data));
+            };
+
+            function setControlSocket() {
+                var thisUrl = window.location.href;
+                var wsUrl = thisUrl.replace("http", "ws") + (thisUrl.endsWith("/") ? "" : "/") + "net-controller";
+                controlSocket = new WebSocket(wsUrl);
+                controlSocket.onopen = controlSocketOnOpen;
+                controlSocket.onclose = controlSocketOnClose;
+                controlSocket.onmessage = controlSocketOnMessage;
+            }
+
+            setControlSocket();
+
+            function dispatcher(msg) {
+            }
+
+            $("#start-button").click(function() {
+                controlSocket.send("start")
+            });
+
+            $("#pause-button").click(function() {
+                controlSocket.send("pause")
+            });
+
+            $("#quit-button").click(function() {
+                controlSocket.send("quit")
+            });
+
+        });
+
+</script>
+

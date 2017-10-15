@@ -1,7 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Nazca Controller</title>
+        <link rel="stylesheet" href='@routes.Assets.versioned("bootstrap-3.3.7-dist/css/bootstrap.min.css")'>
+        <link rel="stylesheet" href='@routes.Assets.versioned("bootstrap-toggle-master/css/bootstrap-toggle.min.css")'>
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
 
-<html>
-    <head></head>
+        <script src='@routes.Assets.versioned("jquery-1.12.4.min.js")'></script>
+        <script src='@routes.Assets.versioned("bootstrap-3.3.7-dist/js/bootstrap.min.js")'></script>
+        <script src='@routes.Assets.versioned("bootstrap-toggle-master/js/bootstrap-toggle.min.js")'></script>
+        <script src='@routes.Assets.versioned("d3.v4.js")'></script>
+
+        <style>
+                table {
+                    font-family: monospace;
+                }
+        </style>
+
+    </head>
     <body>
-        hello
+        <ul class="nav nav-tabs">
+            <li class="active"><a data-toggle="tab" href="#main-tab">Main</a></li>
+        </ul>
+        <div class="tab-content">
+            @mainTab()
+        </div>
     </body>
+
 </html>

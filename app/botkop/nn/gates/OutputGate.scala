@@ -19,7 +19,7 @@ class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor),
       val (cost, dal) = costFunction(al, y)
       sender() ! Backward(dal)
 
-      if (i % 1000 == 0) {
+      if (i % 100 == 0) {
         listener ! CostLogEntry("train", i, cost)
       }
       context become accept(i + 1)

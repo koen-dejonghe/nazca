@@ -87,3 +87,4 @@ object LinearGate {
     Props(new LinearGate(shape, next, regularization, optimizer))
 }
 
+case class LinearState(w: Tensor, b: Tensor, optimizer: Optimizer)

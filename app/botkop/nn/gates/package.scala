@@ -11,13 +11,18 @@ package object gates {
       Forward(xy._1, xy._2)
     }
   }
-
   case class Backward(dz: Tensor)
+
+  case class Eval(mode: String, id: Int, x: Tensor, y: Tensor)
   case class Predict(x: Tensor)
 
   case object Persist
   case object Quit
   case object Start
+  case object Pause
+  case object NextBatch
+
+  case class CostLogEntry(mode: String, id: Int, cost: Double)
 
   sealed trait Gate {
     def +(other: Gate)(implicit system: ActorSystem): Network =

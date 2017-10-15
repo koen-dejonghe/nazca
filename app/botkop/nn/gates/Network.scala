@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill}
 import botkop.nn.costs._
 import botkop.nn.optimizers.{GradientDescent, Optimizer}
 
@@ -25,6 +25,10 @@ case class Network(gates: List[Gate] = List.empty,
   def withOptimizer(o: => Optimizer): Network = copy(optimizer = () => o)
   def withRegularization(reg: Double): Network = copy(regularization = reg)
   def withDropout(p: Double): Network = copy(dropout = dropout)
+
+  def entryGate: Option[ActorRef] = actors.headOption
+
+  def quit(): Unit = actors.foreach(_ ! PoisonPill)
 
   def build(listener: ActorRef)(implicit system: ActorSystem): Network = {
     require(gates.nonEmpty)

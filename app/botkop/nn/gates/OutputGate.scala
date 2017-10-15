@@ -19,13 +19,14 @@ class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor),
       val (cost, dal) = costFunction(al, y)
       sender() ! Backward(dal)
 
-      listener ! CostLogEntry(i, cost)
-
       if (i % 1000 == 0) {
-        log.debug(s"iteration: $i cost: $cost")
+        listener ! CostLogEntry("train", i, cost)
       }
-
       context become accept(i + 1)
+
+    case Eval(mode, id, x, y) =>
+      val (cost, _) = costFunction(x, y)
+      listener ! CostLogEntry(mode, id, cost)
 
     case Predict(x) =>
       listener ! x
@@ -39,4 +40,3 @@ object OutputGate {
     Props(new OutputGate(costFunction, listener))
 }
 
-case class CostLogEntry(iteration: Int, cost: Double)

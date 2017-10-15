@@ -2,10 +2,11 @@ package controllers
 
 import javax.inject._
 
-import akka.actor.{ActorSelection, ActorSystem}
-import botkop.nn.gates._
-import botkop.nn.optimizers._
-import botkop.nn.costs._
+import actors.sockets.ControlSocket
+import akka.actor.{ActorRef, ActorSystem}
+import akka.stream.Materializer
+import botkop.Monitor
+import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 
 /**
@@ -13,31 +14,21 @@ import play.api.mvc._
   * application's home page.
   */
 @Singleton
-class NetController @Inject()(cc: ControllerComponents)(implicit system: ActorSystem)
+class NetController @Inject()(cc: ControllerComponents)(
+    implicit system: ActorSystem,
+    mat: Materializer)
     extends AbstractController(cc) {
 
+  val monitor: ActorRef = system.actorOf(Monitor.props())
+
   def index = Action {
-    val proxy: ActorSelection =
-      system.actorSelection("akka://NeuralSystem@127.0.0.1:25520/user/proxy")
+    Ok(views.html.index())
+  }
 
-    val nn: Network =
-      ((Linear + Relu + Dropout) * 2 + Linear)
-        .withDimensions(784, 100, 50, 10)
-        .withOptimizer(Adam(learningRate = 0.0001))
-        .withCostFunction(softmaxCost)
-        .withRegularization(1e-5)
-
-    proxy ! Quit
-
-    Thread.sleep(2000)
-
-    proxy ! nn
-
-    Thread.sleep(2000)
-
-    proxy ! Start
-
-    Ok(views.html.index("Your new application is ready."))
+  def socket: WebSocket = WebSocket.accept[String, String] { request =>
+    ActorFlow.actorRef { out =>
+      ControlSocket.props(out, monitor)
+    }
   }
 
 }

@@ -1,6 +1,5 @@
 package botkop.nn.optimizers
 
-
 import botkop.numsca
 import botkop.numsca.Tensor
 
@@ -33,4 +32,6 @@ case class Nesterov(var learningRate: Double,
     v -= learningRate * dx
     x += (-beta * vPrev) + (1 + beta) * v
   }
+
+  override def setLearningRate(lr: Double): Unit = this.learningRate = lr
 }

@@ -30,7 +30,7 @@ case class Network(gates: List[Gate] = List.empty,
 
   def quit(): Unit = actors.foreach(_ ! PoisonPill)
 
-  def build(listener: ActorRef)(implicit system: ActorSystem): Network = {
+  def build(implicit system: ActorSystem): Network = {
     require(gates.nonEmpty)
     require(dimensions.nonEmpty)
     require(actors.isEmpty)
@@ -38,7 +38,7 @@ case class Network(gates: List[Gate] = List.empty,
     require(numLinearGates == dimensions.length - 1)
 
     val output =
-      system.actorOf(OutputGate.props(costFunction, listener), "output")
+      system.actorOf(OutputGate.props(costFunction), "output")
 
     val nn = build(gates.reverse, dimensions.length, List(output))
 

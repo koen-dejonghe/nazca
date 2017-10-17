@@ -3,23 +3,20 @@ package controllers
 import javax.inject._
 
 import actors.sockets.ControlSocket
+import actors.sockets.MonitorSocket
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
-import botkop.Monitor
+import botkop.Driver
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 
-/**
-  * This controller creates an `Action` to handle HTTP requests to the
-  * application's home page.
-  */
 @Singleton
 class NetController @Inject()(cc: ControllerComponents)(
     implicit system: ActorSystem,
     mat: Materializer)
     extends AbstractController(cc) {
 
-  val monitor: ActorRef = system.actorOf(Monitor.props())
+  val monitor: ActorRef = system.actorOf(Driver.props())
 
   def index = Action {
     Ok(views.html.index())
@@ -27,8 +24,13 @@ class NetController @Inject()(cc: ControllerComponents)(
 
   def controlSocket: WebSocket = WebSocket.accept[String, String] { request =>
     ActorFlow.actorRef { out =>
-      ControlSocket.props(out, monitor)
+      ControlSocket.props(out)
     }
   }
 
+  def monitorSocket: WebSocket = WebSocket.accept[String, String] { request =>
+    ActorFlow.actorRef { out =>
+      MonitorSocket.props(out)
+    }
+  }
 }

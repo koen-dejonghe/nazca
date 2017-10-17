@@ -10,6 +10,8 @@ trait Optimizer extends Serializable {
     * @param gradients List of gradients where gradients(0) = gradients of the weights, and gradients(1) = gradients of the biases
     */
   def update(parameters: List[Tensor], gradients: List[Tensor]): Unit
+
+  def setLearningRate(learningRate: Double): Unit
 }
 
 

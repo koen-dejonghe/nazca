@@ -7,10 +7,18 @@
                 <button class="btn btn-default" id="start-button">Start</button>
                 <button class="btn btn-default" id="pause-button">Pause</button>
                 <button class="btn btn-default" id="quit-button">Quit</button>
+                <hr>
+                <div class="form-group">
+                    <label for="learning-rate">Learning Rate:</label>
+                    <input type="text" class="form-control" id="learning-rate">
+                </div>
+                <button class="btn btn-default" id="learning-rate-button">Submit</button>
             </div>
         </div>
 
         <div class="col-md-8">
+            <canvas id="dev-chart"></canvas>
+            <canvas id="training-chart"></canvas>
         </div>
     </div>
 
@@ -49,17 +57,214 @@
             function dispatcher(msg) {
             }
 
-            $("#start-button").click(function() {
+            $("#start-button").click(function () {
                 controlSocket.send("start")
             });
 
-            $("#pause-button").click(function() {
+            $("#pause-button").click(function () {
                 controlSocket.send("pause")
             });
 
-            $("#quit-button").click(function() {
+            $("#quit-button").click(function () {
                 controlSocket.send("quit")
             });
+
+            $("#learning-rate-button").click(function () {
+                console.log("button clicked");
+                var lr = $('#learning-rate').val();
+                controlSocket.send("learning-rate=" + lr)
+            });
+        });
+
+
+        $(function () {
+            var monitorSocket;
+
+            var monitorSocketOnOpen = function () {
+                console.log("monitor websocket opened");
+            };
+
+            var monitorSocketOnClose = function () {
+                console.log('monitor websocket disconnected');
+                setMonitorSocket()
+            };
+
+            var monitorSocketOnMessage = function (msg) {
+                console.log('monitor websocket received message: ' + msg.data);
+                dispatcher(JSON.parse(msg.data));
+            };
+
+            function setMonitorSocket() {
+                var thisUrl = window.location.href;
+                var wsUrl = thisUrl.replace("http", "ws") + (thisUrl.endsWith("/") ? "" : "/") + "net-monitor";
+                monitorSocket = new WebSocket(wsUrl);
+                monitorSocket.onopen = monitorSocketOnOpen;
+                monitorSocket.onclose = monitorSocketOnClose;
+                monitorSocket.onmessage = monitorSocketOnMessage;
+            }
+
+            setMonitorSocket();
+
+            var numSamples = 60;
+
+            /*
+             * === Training Chart ===
+             */
+            var trainingCtx = document.getElementById("training-chart").getContext('2d');
+            var trainingCostData = [];
+            var trainingCostLabels = [];
+            trainingCostData.length = numSamples;
+            trainingCostLabels.length = numSamples;
+            trainingCostData.fill(0);
+            trainingCostLabels.fill(0);
+
+            var trainingChart = new Chart(trainingCtx, {
+                type: 'line',
+                data: {
+                    labels: trainingCostLabels,
+                    datasets: [
+                    {
+                        data: trainingCostData,
+                        backgroundColor: 'rgba(55, 99, 132, 0.1)',
+                        borderColor: 'rgb(55, 99, 132)',
+                        borderWidth: 2,
+                        label: "training cost"
+                    }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: {
+                        easing: 'linear'
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: true,
+                            ticks: {
+                                autoSkip:true,
+                                maxTicksLimit:10
+                            }
+                        }]
+                    }
+                }
+            });
+
+            /*
+             * === Dev Chart ===
+             */
+            var devCtx = document.getElementById("dev-chart").getContext('2d');
+            var devLabels = [];
+            devLabels.length = numSamples;
+            devLabels.fill(0);
+
+            var devCostData = [];
+            devCostData.length = numSamples;
+            devCostData.fill(0);
+
+            var devAccData = [];
+            devAccData.length = numSamples;
+            devAccData.fill(0);
+
+            var trainCostData = [];
+            trainCostData.length = numSamples;
+            trainCostData.fill(0);
+
+            var trainAccData = [];
+            trainAccData.length = numSamples;
+            trainAccData.fill(0);
+
+
+            var devChart = new Chart(devCtx, {
+                type: 'line',
+                data: {
+                    labels: devLabels,
+                    datasets: [
+                        {
+                            data: devCostData,
+                            backgroundColor: 'rgba(55, 99, 132, 0.1)',
+                            borderColor: 'rgb(55, 99, 132)',
+                            borderWidth: 2,
+                            label: "dev cost"
+                        }
+                        ,
+                        {
+                            data: devAccData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderWidth: 2,
+                            label: "dev accuracy"
+                        },
+                        {
+                            data: trainCostData,
+                            backgroundColor: 'rgba(55, 199, 232, 0.1)',
+                            borderColor: 'rgb(55, 99, 232)',
+                            borderWidth: 2,
+                            label: "training cost"
+                        },
+                        {
+                            data: trainAccData,
+                            backgroundColor: 'rgba(255, 199, 232, 0.1)',
+                            borderColor: 'rgb(255, 99, 232)',
+                            borderWidth: 2,
+                            label: "training accuracy"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: {
+                        easing: 'linear'
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: true,
+                            ticks: {
+                                autoSkip:true,
+                                maxTicksLimit:20
+                            }
+                        }]
+                    }
+                }
+            });
+
+
+            function dispatcher(msg) {
+                if (msg.source === "train") {
+                    trainingCostLabels.push(msg.id);
+                    trainingCostLabels.shift();
+
+                    trainingCostData.push(msg.cost);
+                    trainingCostData.shift();
+
+                    trainingChart.update();
+                }
+
+                if (msg.source === "dev-eval") {
+                    devLabels.push(msg.id);
+                    devLabels.shift();
+
+                    devCostData.push(msg.cost);
+                    devCostData.shift();
+
+                    devAccData.push(msg.accuracy);
+                    devAccData.shift();
+
+                    devChart.update();
+                }
+
+                if (msg.source === "train-eval") {
+                    trainCostData.push(msg.cost);
+                    trainCostData.shift();
+
+                    trainAccData.push(msg.accuracy);
+                    trainAccData.shift();
+
+                    devChart.update();
+                }
+
+            }
 
         });
 

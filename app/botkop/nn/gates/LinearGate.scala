@@ -1,6 +1,8 @@
 package botkop.nn.gates
 
 import akka.actor.{ActorLogging, ActorRef, Props}
+import akka.cluster.pubsub.DistributedPubSub
+import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.persistence._
 import botkop.nn.optimizers.Optimizer
 import botkop.numsca
@@ -15,6 +17,9 @@ class LinearGate(shape: Array[Int],
                  seed: Long = 231)
     extends PersistentActor
     with ActorLogging {
+
+  val mediator: ActorRef = DistributedPubSub(context.system).mediator
+  mediator ! Subscribe("control", self)
 
   numsca.rand.setSeed(seed)
 
@@ -37,6 +42,10 @@ class LinearGate(shape: Array[Int],
     case Predict(x) =>
       val z = activate(x)
       next forward Predict(z)
+
+    case Eval(source, id, x, y) =>
+      val z = activate(x)
+      next ! Eval(source, id, z, y)
 
     case Backward(dz) if cache isDefined =>
       val (prev, a) = cache.get
@@ -62,6 +71,9 @@ class LinearGate(shape: Array[Int],
 
     case Persist =>
       saveSnapshot(LinearState(w, b, optimizer))
+
+    case SetLearningRate(lr) =>
+      optimizer.setLearningRate(lr)
   }
 
   override def receiveRecover: Receive = {

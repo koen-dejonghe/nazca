@@ -30,6 +30,11 @@ class SigmoidGate(next: ActorRef) extends Actor with ActorLogging {
     case Predict(x) =>
       val a = activate(x)
       next forward Predict(a)
+
+    case Eval(source, id, x, y) =>
+      val z = activate(x)
+      next ! Eval(source, id, z, y)
+
   }
 }
 

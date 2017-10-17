@@ -3,8 +3,7 @@ package botkop.nn.optimizers
 import botkop.numsca
 import botkop.numsca.Tensor
 
-
-case class Momentum(learningRate: Double, beta: Double = 0.9)
+case class Momentum(var learningRate: Double, beta: Double = 0.9)
     extends Optimizer {
 
   var vs = List.empty[Tensor]
@@ -24,4 +23,6 @@ case class Momentum(learningRate: Double, beta: Double = 0.9)
     }
 
   }
+
+  override def setLearningRate(lr: Double): Unit = this.learningRate = lr
 }

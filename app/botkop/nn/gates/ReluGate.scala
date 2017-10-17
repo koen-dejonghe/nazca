@@ -30,6 +30,10 @@ class ReluGate(next: ActorRef) extends Actor with ActorLogging {
       val a = activate(z)
       next forward Predict(a)
 
+    case Eval(source, id, x, y) =>
+      val z = activate(x)
+      next ! Eval(source, id, z, y)
+
   }
 }
 

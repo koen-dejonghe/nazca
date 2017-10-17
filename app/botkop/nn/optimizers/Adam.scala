@@ -2,14 +2,15 @@ package botkop.nn.optimizers
 
 import botkop.numsca
 import botkop.numsca.Tensor
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.language.postfixOps
 
-case class Adam(learningRate: Double,
+case class Adam(var learningRate: Double,
                 beta1: Double = 0.9,
                 beta2: Double = 0.999,
                 epsilon: Double = 1e-8)
-    extends Optimizer {
+    extends Optimizer with LazyLogging {
 
   var t = 1
 
@@ -45,4 +46,8 @@ case class Adam(learningRate: Double,
     x -= learningRate * mt / (numsca.sqrt(vt) + epsilon)
   }
 
+  override def setLearningRate(lr: Double): Unit = {
+    logger.info(s"changing learning rate from $learningRate to $lr")
+    this.learningRate = lr
+  }
 }

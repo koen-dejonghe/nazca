@@ -15,6 +15,8 @@ libraryDependencies += "com.h2database" % "h2" % "1.4.194"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion
+
 // libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % akkaVersion
 // libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion
 

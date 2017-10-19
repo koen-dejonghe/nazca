@@ -45,7 +45,7 @@ class LinearGate(shape: Array[Int],
 
     case Eval(source, id, x, y) =>
       val z = activate(x)
-      next ! Eval(source, id, z, y)
+      next forward Eval(source, id, z, y)
 
     case Backward(dz) if cache isDefined =>
       val (prev, a) = cache.get

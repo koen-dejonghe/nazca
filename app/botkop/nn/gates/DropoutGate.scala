@@ -29,7 +29,7 @@ class DropoutGate(next: ActorRef, p: Double) extends Actor with ActorLogging {
       next forward predict
 
     case eval: Eval =>
-      next ! eval
+      next forward eval
 
   }
 }

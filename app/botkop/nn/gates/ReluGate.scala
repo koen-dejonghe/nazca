@@ -32,7 +32,7 @@ class ReluGate(next: ActorRef) extends Actor with ActorLogging {
 
     case Eval(source, id, x, y) =>
       val z = activate(x)
-      next ! Eval(source, id, z, y)
+      next forward Eval(source, id, z, y)
 
   }
 }

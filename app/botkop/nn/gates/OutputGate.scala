@@ -28,10 +28,17 @@ class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
       }
       context become accept(i + 1)
 
+      /*
     case Eval(source, id, x, y) =>
       val (cost, _) = costFunction(x, y)
       val acc = accuracy(x, y)
       mediator ! Publish("monitor", EvalEntry(source, id, cost, acc))
+      */
+
+    case Eval(source, id, x, y) =>
+      val (cost, _) = costFunction(x, y)
+      val acc = accuracy(x, y)
+      sender ! EvalEntry(source, id, cost, acc)
 
     case p: Predict =>
       mediator ! Publish("predict", p)

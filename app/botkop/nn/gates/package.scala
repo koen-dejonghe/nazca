@@ -28,6 +28,7 @@ package object gates {
   case object Start
   case object Pause
   case object NextBatch
+  case class Epoch(epoch: Int)
 
   case class CostLogEntry(source: String, id: Int, cost: Double)
   object CostLogEntry {

@@ -5,12 +5,14 @@ import java.io.File
 import javax.imageio.ImageIO
 
 import botkop.numsca.Tensor
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.language.postfixOps
 import scala.util.Random
 
 class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
-    extends DataLoader {
+    extends DataLoader with LazyLogging {
+
   Random.setSeed(seed)
 
   val labels = List(
@@ -26,24 +28,38 @@ class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
     "truck"
   )
 
-  val files: List[(Float, File)] = getListOfFiles(folder)
-  val m: Int = files.length
-  val n: Int = {
-    val image = ImageIO.read(files.head._2)
-    image.getHeight * image.getWidth * 3
-  }
+  val n: Int = 32 * 32 * 3
 
-  def nextBatch: (Tensor, Tensor) = {
-    val sampleFiles = Seq.fill(miniBatchSize)(Random.nextInt(m)) map files
-    val xData = sampleFiles map (_._2) flatMap readFile toArray
-    val yData = sampleFiles map (_._1) toArray
+  val fileList: List[(Float, File)] = getListOfFiles(folder)
 
-    (Tensor(xData).reshape(miniBatchSize, n).transpose,
-     Tensor(yData).reshape(miniBatchSize, 1).transpose)
+  override def numSamples: Int = fileList.length
+  override def numBatches: Int =
+    (numSamples / miniBatchSize) +
+      (if (numSamples % miniBatchSize == 0) 0 else 1)
 
-    // (Tensor(xData).reshape(n, miniBatchSize),
-      // Tensor(yData).reshape(1, miniBatchSize))
-  }
+  override def iterator: Iterator[(Tensor, Tensor)] =
+    Random
+      .shuffle(fileList)
+      .sliding(miniBatchSize, miniBatchSize)
+      .map { sampleFiles =>
+
+        val xData = sampleFiles map (_._2) flatMap readFile toArray
+
+        /*
+        val xData = sampleFiles.foldLeft(List.empty[Float]) {
+          case (xs, f) =>
+            val x = readFile(f._2).toList
+            x ::: xs
+        } toArray
+        */
+
+        val yData = sampleFiles map (_._1) toArray
+
+        val batchSize = sampleFiles.length
+
+        (Tensor(xData).reshape(batchSize, n).transpose,
+         Tensor(yData).reshape(batchSize, 1).transpose)
+      }
 
   def readFile(file: File): Seq[Float] = {
     val image: BufferedImage = ImageIO.read(file)
@@ -60,6 +76,7 @@ class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
       val red = ((pixel >> 16) & 0xff) / div
       val green = ((pixel >> 8) & 0xff) / div
       val blue = (pixel & 0xff) / div
+
       Seq(red, green, blue)
     }
     lol flatten
@@ -83,4 +100,3 @@ class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
   }
 
 }
-

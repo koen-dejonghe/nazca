@@ -19,29 +19,23 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val system: ActorSystem = context.system
 
-  def optimizer = Adam(learningRate = 0.001)
-  // def optimizer = Nesterov(learningRate = 0.1)
+  // def optimizer = Adam(learningRate = 0.001)
+  def optimizer = Nesterov(learningRate = 0.1)
 
   val template: Network = (Linear + Relu + Linear)
-    // .withDimensions(784, 50, 10)
-    .withDimensions(32 * 32 * 3, 100, 10)
+  .withDimensions(784, 50, 10)
+    // .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
-    .withRegularization(1e-5)
+  // .withRegularization(1e-5)
 
-  val trainingDataLoader = new Cifar10DataLoader("data/cifar-10/train", 64)
+  // val trainingDataLoader = new Cifar10DataLoader("data/cifar-10/train", 8)
+  // val devDataLoader = new Cifar10DataLoader("data/cifar-10/test", 1024)
+  // val trainEvalDataLoader = new Cifar10DataLoader("data/cifar-10/train", 1024)
 
-  val devDataLoader = new Cifar10DataLoader("data/cifar-10/test", 1024)
-  val trainEvalDataLoader = new Cifar10DataLoader("data/cifar-10/train", 1024)
-
-  // val trainingDataLoader = new MnistDataLoader("data/mnist/mnist_train.csv.gz", 16)
-  // val devDataLoader = new MnistDataLoader("data/mnist/mnist_test.csv.gz", 2048)
-
-  val devEvaluator: ActorRef =
-    system.actorOf(Evaluator.props("dev-eval", devDataLoader, 30 seconds))
-
-  val trainEvaluator: ActorRef =
-    system.actorOf(Evaluator.props("train-eval", trainEvalDataLoader, 30 seconds))
+  val trainingDataLoader = new MnistDataLoader("data/mnist/mnist_train.csv.gz", 16)
+  val devEvalDataLoader = new MnistDataLoader("data/mnist/mnist_test.csv.gz", 256)
+  val trainEvalDataLoader = new MnistDataLoader("data/mnist/mnist_train.csv.gz", 256)
 
   timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
@@ -50,12 +44,18 @@ class Driver extends Actor with Timers with ActorLogging {
   def empty: Receive = {
     case Start =>
       val nn = template.build
+
       val miniBatcher =
         system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate.get))
       miniBatcher ! NextBatch
 
-      devEvaluator ! nn
-      trainEvaluator ! nn
+      val devEvaluator: ActorRef =
+        system.actorOf(
+          Evaluator.props("dev-eval", devEvalDataLoader, nn.entryGate.get))
+
+      val trainEvaluator: ActorRef =
+        system.actorOf(
+          Evaluator.props("train-eval", trainEvalDataLoader, nn.entryGate.get))
 
       context become running(nn, miniBatcher)
   }

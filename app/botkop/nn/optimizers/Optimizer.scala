@@ -12,6 +12,8 @@ trait Optimizer extends Serializable {
   def update(parameters: List[Tensor], gradients: List[Tensor]): Unit
 
   def setLearningRate(learningRate: Double): Unit
+
+  def updateLearningRate(): Unit
 }
 
 

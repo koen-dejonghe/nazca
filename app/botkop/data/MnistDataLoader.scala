@@ -9,23 +9,26 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.io.Source
 import scala.util.Random
 
-class MnistDataLoader(file: String, miniBatchSize: Int, seed: Long = 231)
+class MnistDataLoader(file: String,
+                      miniBatchSize: Int,
+                      take: Option[Int] = None,
+                      seed: Long = 231)
     extends DataLoader
     with LazyLogging {
 
-  Random.setSeed(seed)
-
-  override def numSamples: Int = Source.fromInputStream(gzis(file)).length
-  override def numBatches: Int =
+  override val numSamples: Int = Source.fromInputStream(gzis(file)).length
+  override val numBatches: Int =
     (numSamples / miniBatchSize) +
       (if (numSamples % miniBatchSize == 0) 0 else 1)
 
   override def iterator: Iterator[(Tensor, Tensor)] =
-    Random
+    new Random(seed)
       .shuffle(
         Source
           .fromInputStream(gzis(file))
-          .getLines())
+          .getLines()
+      )
+      .take(take.getOrElse(numSamples))
       .sliding(miniBatchSize, miniBatchSize)
       .map { lines =>
         val (xData, yData) = lines
@@ -41,7 +44,6 @@ class MnistDataLoader(file: String, miniBatchSize: Int, seed: Long = 231)
         val y = Tensor(yData.toArray).reshape(yData.length, 1).transpose
 
         (x, y)
-
       }
 
   def gzis(fname: String): GZIPInputStream =

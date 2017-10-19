@@ -20,6 +20,7 @@ class LinearGate(shape: Array[Int],
 
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
+  mediator ! Subscribe("monitor", self)
 
   numsca.rand.setSeed(seed)
 
@@ -74,6 +75,10 @@ class LinearGate(shape: Array[Int],
 
     case SetLearningRate(lr) =>
       optimizer.setLearningRate(lr)
+
+    case Epoch(epoch) => // adjust learning rate after the every epoch
+      optimizer.updateLearningRate()
+
   }
 
   override def receiveRecover: Receive = {

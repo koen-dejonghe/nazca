@@ -10,10 +10,12 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.language.postfixOps
 import scala.util.Random
 
-class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
-    extends DataLoader with LazyLogging {
-
-  Random.setSeed(seed)
+class Cifar10DataLoader(folder: String,
+                        miniBatchSize: Int,
+                        take: Option[Int] = None,
+                        seed: Long = 231)
+    extends DataLoader
+    with LazyLogging {
 
   val labels = List(
     "airplane",
@@ -32,17 +34,17 @@ class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
 
   val fileList: List[(Float, File)] = getListOfFiles(folder)
 
-  override def numSamples: Int = fileList.length
-  override def numBatches: Int =
+  override val numSamples: Int = fileList.length
+  override val numBatches: Int =
     (numSamples / miniBatchSize) +
       (if (numSamples % miniBatchSize == 0) 0 else 1)
 
   override def iterator: Iterator[(Tensor, Tensor)] =
-    Random
+    new Random(seed)
       .shuffle(fileList)
+      .take(take.getOrElse(numSamples))
       .sliding(miniBatchSize, miniBatchSize)
       .map { sampleFiles =>
-
         val xData = sampleFiles map (_._2) flatMap readFile toArray
 
         /*
@@ -51,7 +53,7 @@ class Cifar10DataLoader(folder: String, miniBatchSize: Int, seed: Long = 231)
             val x = readFile(f._2).toList
             x ::: xs
         } toArray
-        */
+         */
 
         val yData = sampleFiles map (_._1) toArray
 

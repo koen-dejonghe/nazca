@@ -16,7 +16,6 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
 
   override def receive: Receive = {
     log.info("starting epoch 1")
-    mediator ! Publish("monitor", Epoch(1))
     val it = dataLoader.iterator
     accept(it.next(), it, 1)
   }
@@ -24,6 +23,7 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
   def accept(batch: (Tensor, Tensor),
              it: Iterator[(Tensor, Tensor)],
              epoch: Int): Receive = {
+
     case NextBatch =>
       entryGate forward Forward(batch)
       if (it.hasNext)
@@ -39,19 +39,6 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
     case Quit =>
       self ! PoisonPill
   }
-
-  /*
-  override def receive: Receive = accept(dataLoader.nextBatch)
-
-  def accept(batch: (Tensor, Tensor)): Receive = {
-    case NextBatch =>
-      entryGate forward Forward(batch)
-      context become accept(dataLoader.nextBatch)
-
-    case Quit =>
-      self ! PoisonPill
-  }
- */
 
 }
 

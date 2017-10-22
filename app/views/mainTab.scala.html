@@ -20,8 +20,19 @@
             <canvas id="training-chart"></canvas>
         </div>
         <div class="col-md-5">
-            <canvas id="dev-chart"></canvas>
+            <canvas id="cost-chart"></canvas>
         </div>
+    </div>
+    <div class="row content">
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-5">
+        </div>
+        <div class="col-md-5">
+            <canvas id="accuracy-chart"></canvas>
+        </div>
+
+
     </div>
 
 </div>
@@ -41,7 +52,6 @@
             };
 
             var controlSocketOnMessage = function (msg) {
-                // console.log('pdf websocket received message: ' + msg.data);
                 dispatcher(JSON.parse(msg.data));
             };
 
@@ -72,7 +82,6 @@
             });
 
             $("#learning-rate-button").click(function () {
-                console.log("button clicked");
                 var lr = $('#learning-rate').val();
                 controlSocket.send("learning-rate=" + lr)
             });
@@ -92,7 +101,7 @@
             };
 
             var monitorSocketOnMessage = function (msg) {
-                console.log('monitor websocket received message: ' + msg.data);
+                // console.log('monitor websocket received message: ' + msg.data);
                 dispatcher(JSON.parse(msg.data));
             };
 
@@ -107,11 +116,11 @@
 
             setMonitorSocket();
 
-            var numTrainingSamples = 100;
-
             /*
              * === Training Chart ===
              */
+            var numTrainingSamples = 100;
+
             var trainingCtx = document.getElementById("training-chart").getContext('2d');
             var trainingCostData = [];
             var trainingCostLabels = [];
@@ -142,7 +151,6 @@
                     },
                     scales: {
                         xAxes: [{
-                            display: true,
                             ticks: {
                                 autoSkip:true,
                                 maxTicksLimit:10
@@ -158,7 +166,9 @@
 
             var numEvalSamples = 20;
 
-            var devCtx = document.getElementById("dev-chart").getContext('2d');
+            var costCtx = document.getElementById("cost-chart").getContext('2d');
+            var accCtx = document.getElementById("accuracy-chart").getContext('2d');
+
             var devLabels = [];
             devLabels.length = numEvalSamples;
             devLabels.fill(0);
@@ -180,7 +190,7 @@
             trainAccData.fill(0);
 
 
-            var devChart = new Chart(devCtx, {
+            var costChart = new Chart(costCtx, {
                 type: 'line',
                 data: {
                     labels: devLabels,
@@ -191,14 +201,6 @@
                             borderColor: 'rgb(44,162,95)',
                             borderWidth: 2,
                             label: "dev cost"
-                        }
-                        ,
-                        {
-                            data: devAccData,
-                            backgroundColor: 'rgba(67,162,202, 0.1)',
-                            borderColor: 'rgb(67,162,202)',
-                            borderWidth: 2,
-                            label: "dev accuracy"
                         },
                         {
                             data: trainCostData,
@@ -206,6 +208,38 @@
                             borderColor: 'rgb(227,74,51)',
                             borderWidth: 2,
                             label: "training cost"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: {
+                        easing: 'linear'
+                    },
+                    scales: {
+                        xAxes: [{
+                            ticks: {
+                                autoSkip:true,
+                                maxTicksLimit:20
+                            }
+                        }]
+                    }
+                }
+            });
+
+
+            var accChart = new Chart(accCtx, {
+                type: 'line',
+                data: {
+                    labels: devLabels,
+                    datasets: [
+                        {
+                            data: devAccData,
+                            backgroundColor: 'rgba(67,162,202, 0.1)',
+                            borderColor: 'rgb(67,162,202)',
+                            borderWidth: 2,
+                            label: "dev accuracy"
                         },
                         {
                             data: trainAccData,
@@ -224,7 +258,6 @@
                     },
                     scales: {
                         xAxes: [{
-                            display: true,
                             ticks: {
                                 autoSkip:true,
                                 maxTicksLimit:20
@@ -233,7 +266,6 @@
                     }
                 }
             });
-
 
             function dispatcher(msg) {
                 if (msg.source === "train") {
@@ -256,7 +288,8 @@
                     devAccData.push(msg.accuracy);
                     devAccData.shift();
 
-                    devChart.update();
+                    costChart.update();
+                    accChart.update();
                 }
 
                 if (msg.source === "train-eval") {
@@ -266,11 +299,10 @@
                     trainAccData.push(msg.accuracy);
                     trainAccData.shift();
 
-                    devChart.update();
+                    costChart.update();
+                    accChart.update();
                 }
-
             }
-
         });
 
 </script>

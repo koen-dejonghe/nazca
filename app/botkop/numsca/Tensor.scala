@@ -57,6 +57,8 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def /=(t: Tensor): Unit = array divi bc(t)
   def %=(t: Tensor): Unit = array fmodi bc(t)
 
+  def :=(t: Tensor): Unit = array assign t.array
+
   def >(other: Tensor): Tensor = new Tensor(array gt bc(other), true)
   def <(other: Tensor): Tensor = new Tensor(array lt bc(other), true)
   def ==(other: Tensor): Tensor = new Tensor(array eq bc(other), true)

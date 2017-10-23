@@ -1,25 +1,37 @@
 package botkop.nn.gates
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import botkop.{numsca => ns}
+import akka.actor.{ActorLogging, ActorRef, Props}
+import akka.cluster.pubsub.DistributedPubSub
+import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
+import akka.persistence._
 import botkop.numsca.Tensor
+import botkop.{numsca => ns}
 
-class BatchNormGate(next: ActorRef, eps: Float, momentum: Float)
-    extends Actor
+class BatchNormGate(shape: Array[Int],
+                    next: ActorRef,
+                    eps: Float,
+                    momentum: Float)
+    extends PersistentActor
     with ActorLogging {
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
 
-  def testActivation(x: Tensor, state: BatchNormState): Tensor = {
-    import state._
+  val mediator: ActorRef = DistributedPubSub(context.system).mediator
+  mediator ! Subscribe("control", self)
+
+  val Array(d, n) = shape
+
+  val runningMean: Tensor = ns.zeros(d, 1)
+  val runningVar: Tensor = ns.zeros(d, 1)
+  val gamma: Tensor = ns.ones(d, 1)
+  val beta: Tensor = ns.zeros(d, 1)
+
+  def testActivation(x: Tensor): Tensor = {
     ((x - runningMean) / ns.sqrt(runningVar + eps)) * gamma + beta
   }
 
-  def trainingActivation(x: Tensor,
-                         y: Tensor,
-                         state: BatchNormState): BatchNormCache = {
-    import state._
+  def trainingActivation(x: Tensor, y: Tensor): BatchNormCache = {
 
     // compute per-dimension mean and std_deviation
     val mean = ns.mean(x, axis = 1)
@@ -43,20 +55,13 @@ class BatchNormGate(next: ActorRef, eps: Float, momentum: Float)
     BatchNormCache(invVar, xHat)
   }
 
-  def backProp(dout: Tensor,
-               prev: ActorRef,
-               state: BatchNormState,
-               cache: BatchNormCache): Unit = {
-    import state._
+  def backProp(dout: Tensor, prev: ActorRef, cache: BatchNormCache): Unit = {
     import cache._
-
-    val Array(d, n) = dout.shape
 
     // intermediate partial derivatives
     val dxhat = dout * gamma
 
     // final partial derivatives
-    // val dx = (1.0 / n) * invVar * (n * dxhat - ns.sum(dxhat, axis = 1) - ns.sum(dxhat * xHat, axis = 1) * xHat)
     val dx = (
       (n * dxhat) - ns.sum(dxhat, axis = 1) -
         (xHat * ns.sum(dxhat * xHat, axis = 1))
@@ -67,49 +72,62 @@ class BatchNormGate(next: ActorRef, eps: Float, momentum: Float)
     val dbeta = ns.sum(dout, axis = 1)
     val dgamma = ns.sum(xHat * dout, axis = 1)
 
-    // note sure about this...
+    // not sure about this...
     beta -= dbeta
     gamma -= dgamma
   }
 
-  override def receive: Receive = {
-    // 1st time
+  def accept(prev: ActorRef, cache: BatchNormCache): Receive = {
     case Forward(x, y) =>
-      val Array(d, n) = x.shape
-      val runningMean = ns.zeros(d, 1)
-      val runningVar = ns.zeros(d, 1)
-      val gamma = ns.ones(d, 1)
-      val beta = ns.zeros(d, 1)
-      val state = BatchNormState(runningMean, runningVar, gamma, beta)
-      val cache = trainingActivation(x, y, state)
-      context become accept(sender(), state, cache)
-  }
-
-  def accept(prev: ActorRef,
-             state: BatchNormState,
-             cache: BatchNormCache): Receive = {
-    case Forward(x, y) =>
-      val cache = trainingActivation(x, y, state)
-      context become accept(sender(), state, cache)
+      val cache = trainingActivation(x, y)
+      context become accept(sender(), cache)
 
     case Eval(source, id, x, y) =>
-      val out = testActivation(x, state)
+      val out = testActivation(x)
       next forward Eval(source, id, out, y)
 
     case Backward(dout) =>
-      backProp(dout, prev, state, cache)
+      backProp(dout, prev, cache)
+
+    case ss: SaveSnapshotSuccess =>
+      deleteSnapshots(
+        SnapshotSelectionCriteria.create(ss.metadata.sequenceNr,
+                                         ss.metadata.timestamp - 1000))
+
+    case Persist =>
+      saveSnapshot(BatchNormState(runningMean, runningVar, gamma, beta))
+
   }
 
-  case class BatchNormState(runningMean: Tensor,
-                            runningVar: Tensor,
-                            gamma: Tensor,
-                            beta: Tensor)
+  override def receiveCommand: Receive = {
+    case Forward(x, y) =>
+      val cache = trainingActivation(x, y)
+      context become accept(sender(), cache)
+  }
 
-  case class BatchNormCache(invVar: Tensor, xHat: Tensor)
+  override def persistenceId: String = name
 
+  override def receiveRecover: Receive = {
+    case SnapshotOffer(meta: SnapshotMetadata, snapshot: BatchNormState) =>
+      log.debug(s"$name: received snapshot ${meta.persistenceId}")
+      runningMean := snapshot.runningMean
+      runningVar := snapshot.runningVar
+      gamma := snapshot.gamma
+      beta := snapshot.beta
+  }
 }
 
 object BatchNormGate {
-  def props(next: ActorRef, eps: Float = 1e-5f, momentum: Float = 0.9f) =
-    Props(new BatchNormGate(next, eps, momentum))
+  def props(shape: Array[Int],
+            next: ActorRef,
+            eps: Float = 1e-5f,
+            momentum: Float = 0.9f) =
+    Props(new BatchNormGate(shape, next, eps, momentum))
 }
+
+case class BatchNormState(runningMean: Tensor,
+                          runningVar: Tensor,
+                          gamma: Tensor,
+                          beta: Tensor)
+
+case class BatchNormCache(invVar: Tensor, xHat: Tensor)

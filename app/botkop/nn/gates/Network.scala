@@ -53,19 +53,23 @@ case class Network(gates: List[Gate] = List.empty,
 
     case g :: gs =>
       g match {
+
         case Relu =>
           val gate =
             system.actorOf(ReluGate.props(network.head), Relu.name(i))
           build(gs, i, gate :: network)
+
         case Sigmoid =>
           val gate =
             system.actorOf(SigmoidGate.props(network.head), Sigmoid.name(i))
           build(gs, i, gate :: network)
+
         case Dropout =>
           val gate =
             system.actorOf(DropoutGate.props(network.head, dropout),
                            Dropout.name(i))
           build(gs, i, gate :: network)
+
         case Linear =>
           val shape = dimensions.slice(i - 2, i).reverse
           val gate =
@@ -75,13 +79,12 @@ case class Network(gates: List[Gate] = List.empty,
                                             optimizer()),
                            Linear.name(i - 1))
           build(gs, i - 1, gate :: network)
+
         case BatchNorm =>
           val shape = dimensions.slice(i - 2, i).reverse
-          println(dimensions.toList)
-          println(shape.toList)
-          val gate = system.actorOf(BatchNormGate.props(network.head))
+          val gate = system.actorOf(BatchNormGate.props(shape, network.head),
+                                    BatchNorm.name(i))
           build(gs, i, gate :: network)
       }
-
   }
 }

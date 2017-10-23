@@ -44,7 +44,7 @@ class Driver extends Actor with Timers with ActorLogging {
   // val trainEvalDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 256, take = Some(2048))
 
-  // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
+  timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
   override def receive: Receive = empty
 

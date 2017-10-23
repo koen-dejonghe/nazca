@@ -87,7 +87,7 @@ class LinearGate(shape: Array[Int],
       w = snapshot.w
       b = snapshot.b
       optimizer = snapshot.optimizer
-      accept()
+      accept() // todo: probably not needed
   }
 
   override def persistenceId: String = name

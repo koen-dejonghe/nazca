@@ -67,4 +67,7 @@ package object gates {
     def name(layer: Int) = s"dropout-$layer"
   }
 
+  case object BatchNorm extends Gate {
+    def name(layer: Int) = s"batchnorm-$layer"
+  }
 }

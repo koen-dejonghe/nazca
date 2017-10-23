@@ -7,7 +7,7 @@ import botkop.nn.costs._
 import botkop.nn.data.loaders.Cifar10DataLoader
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
-import botkop.nn.optimizers.Adam
+import botkop.nn.optimizers.{Adam, Nesterov}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -19,12 +19,12 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val system: ActorSystem = context.system
 
-  def optimizer = Adam(learningRate = 0.001)
-  // def optimizer = Nesterov(learningRate = 0.1)
+  // def optimizer = Adam(learningRate = 0.001)
+  def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
 
-  val template: Network = ((Linear + Relu) * 2)
+  val template: Network = ((Linear + BatchNorm + Relu) * 2)
   // .withDimensions(784, 50, 10)
-    .withDimensions(32 * 32 * 3, 50, 10)
+    .withDimensions(32 * 32 * 3, 100, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
     // .withRegularization(1e-5)
@@ -44,7 +44,7 @@ class Driver extends Actor with Timers with ActorLogging {
   // val trainEvalDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 256, take = Some(2048))
 
-  timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
+  // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
   override def receive: Receive = empty
 

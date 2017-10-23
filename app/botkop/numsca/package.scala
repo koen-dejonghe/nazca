@@ -89,6 +89,9 @@ package object numsca {
   def ceil(t: Tensor): Tensor = new Tensor(Transforms.ceil(t.array))
   def floor(t: Tensor): Tensor = new Tensor(Transforms.floor(t.array))
 
+  def mean(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.mean(t.array, axis))
+  def variance(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.`var`(t.array, axis))
+
   def multiply(a: Tensor, b: Tensor): Tensor = a * b
   def dot(a: Tensor, b: Tensor): Tensor = a dot b
 }

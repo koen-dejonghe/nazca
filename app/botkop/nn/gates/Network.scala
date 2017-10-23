@@ -75,7 +75,12 @@ case class Network(gates: List[Gate] = List.empty,
                                             optimizer()),
                            Linear.name(i - 1))
           build(gs, i - 1, gate :: network)
-
+        case BatchNorm =>
+          val shape = dimensions.slice(i - 2, i).reverse
+          println(dimensions.toList)
+          println(shape.toList)
+          val gate = system.actorOf(BatchNormGate.props(network.head))
+          build(gs, i, gate :: network)
       }
 
   }

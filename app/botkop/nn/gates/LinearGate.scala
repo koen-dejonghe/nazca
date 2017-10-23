@@ -5,7 +5,7 @@ import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.persistence._
 import botkop.nn.optimizers.Optimizer
-import botkop.numsca
+import botkop.{numsca => ns}
 import botkop.numsca.Tensor
 
 import scala.language.postfixOps
@@ -22,13 +22,13 @@ class LinearGate(shape: Array[Int],
   mediator ! Subscribe("control", self)
   mediator ! Subscribe("monitor", self)
 
-  numsca.rand.setSeed(seed)
+  ns.rand.setSeed(seed)
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
 
-  var w: Tensor = numsca.randn(shape) * math.sqrt(2.0 / shape(1))
-  var b: Tensor = numsca.zeros(shape.head, 1)
+  var w: Tensor = ns.randn(shape) * math.sqrt(2.0 / shape(1))
+  var b: Tensor = ns.zeros(shape.head, 1)
   var cache: Option[(ActorRef, Tensor)] = None
 
   def activate(x: Tensor): Tensor = w.dot(x) + b
@@ -61,7 +61,7 @@ class LinearGate(shape: Array[Int],
       if (regularization != 0)
         dw += regularization * w
 
-      val db = numsca.sum(dz, axis = 1) / m
+      val db = ns.sum(dz, axis = 1) / m
 
       optimizer.update(List(w, b), List(dw, db))
 

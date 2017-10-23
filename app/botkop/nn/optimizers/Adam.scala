@@ -52,6 +52,8 @@ case class Adam(var learningRate: Double,
     this.learningRate = lr
   }
 
-  override def updateLearningRate(): Unit =
+  override def updateLearningRate(): Unit = {
     learningRate *= learningRateDecay
+    logger.info(s"learning rate is now $learningRate")
+  }
 }

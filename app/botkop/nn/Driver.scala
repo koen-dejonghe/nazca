@@ -1,14 +1,13 @@
-package botkop
+package botkop.nn
 
 import akka.actor._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-import botkop.data.{Cifar10DataLoader, MnistDataLoader}
 import botkop.nn.costs._
+import botkop.nn.data.loaders.Cifar10DataLoader
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
-import botkop.nn.optimizers.{Adam, Nesterov}
-import botkop.numsca.Tensor
+import botkop.nn.optimizers.Adam
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -28,14 +27,15 @@ class Driver extends Actor with Timers with ActorLogging {
     .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
-  //.withRegularization(1e-5)
+    // .withRegularization(1e-5)
 
+  val miniBatchSize = 128
   val trainingDataLoader =
-    new Cifar10DataLoader(mode = "train", 8)
+    new Cifar10DataLoader(mode = "train", miniBatchSize)
   val devEvalDataLoader =
-    new Cifar10DataLoader(mode = "dev", 256)
+    new Cifar10DataLoader(mode = "dev", 512)
   val trainEvalDataLoader =
-    new Cifar10DataLoader(mode = "train", 256, take = Some(2048))
+    new Cifar10DataLoader(mode = "train", miniBatchSize, take = Some(2048))
 
   // val trainingDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 16)

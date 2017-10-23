@@ -6,7 +6,7 @@ import actors.sockets.ControlSocket
 import actors.sockets.MonitorSocket
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
-import botkop.Driver
+import botkop.nn.Driver
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 

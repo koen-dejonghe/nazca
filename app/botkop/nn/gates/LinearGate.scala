@@ -76,7 +76,7 @@ class LinearGate(shape: Array[Int],
     case SetLearningRate(lr) =>
       optimizer.setLearningRate(lr)
 
-    case Epoch(epoch) => // adjust learning rate after the every epoch
+    case Epoch(_, _) => // adjust learning rate every epoch
       optimizer.updateLearningRate()
 
   }

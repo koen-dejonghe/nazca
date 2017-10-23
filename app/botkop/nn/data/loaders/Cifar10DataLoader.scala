@@ -1,4 +1,4 @@
-package botkop.data
+package botkop.nn.data.loaders
 
 import java.awt.image.BufferedImage
 import java.io._
@@ -8,6 +8,8 @@ import botkop.numsca
 import botkop.numsca.Tensor
 import com.typesafe.scalalogging.LazyLogging
 
+import scala.collection.parallel.immutable.ParSeq
+import scala.collection.parallel.mutable.ParArray
 import scala.language.postfixOps
 import scala.util.Random
 
@@ -32,34 +34,35 @@ class Cifar10DataLoader(mode: String,
     (numSamples / miniBatchSize) +
       (if (numSamples % miniBatchSize == 0) 0 else 1)
 
-  override def iterator: Iterator[(Tensor, Tensor)] =
-    new Random(seed)
+  override def iterator: Iterator[(Tensor, Tensor)] = {
+    val batches: Iterator[List[File]] = new Random(seed)
       .shuffle(files)
       .take(take.getOrElse(numSamples))
-      .sliding(miniBatchSize, miniBatchSize)
-      .map { sampleFiles =>
-        val yxs = sampleFiles map deserialize
+      .grouped(miniBatchSize)
 
-        val xData = yxs flatMap (_.x) toArray
-        val yData = yxs map (_.y) toArray
+    batches.map { sampleFiles =>
+      val batchSize = sampleFiles.length
 
-        val batchSize = sampleFiles.length
+      // todo: maybe use akka streams here
+      val yxs = sampleFiles.par map deserialize
 
-        val x = Tensor(xData).reshape(batchSize, numFeatures)
-        val y = Tensor(yData).reshape(batchSize, 1)
+      val xData = yxs flatMap (_.x) toArray
+      val yData = yxs map (_.y) toArray
 
-        (x.transpose, y.transpose)
-      }
+      val x = Tensor(xData).reshape(batchSize, numFeatures)
+      val y = Tensor(yData).reshape(batchSize, 1)
+
+      (x.transpose, y.transpose)
+    }
+  }
+
 }
-
-@SerialVersionUID(123L)
-case class YX(y: Float, x: Array[Float]) extends Serializable
 
 object Cifar10DataLoader extends LazyLogging {
 
   val numFeatures: Int = 32 * 32 * 3
 
-  def computeMeanImage(files: List[File]): Tensor = {
+  def computeMeanImage(files: ParSeq[File]): Tensor = {
     val mean = numsca.zeros(1, numFeatures)
 
     files.foreach { f =>
@@ -91,7 +94,7 @@ object Cifar10DataLoader extends LazyLogging {
     lol flatten
   }
 
-  def getListOfFiles(dir: String): List[(Float, File)] = {
+  def getListOfFiles(dir: String): ParSeq[(Float, File)] = {
 
     val labels = List(
       "airplane",
@@ -120,10 +123,11 @@ object Cifar10DataLoader extends LazyLogging {
         case (i, cat, file) =>
           (labels.indexOf(cat).toFloat, file)
       }
+      .par
   }
 
   def serializeDataset(outputFolder: String,
-                       fileList: List[(Float, File)],
+                       fileList: ParSeq[(Float, File)],
                        meanImage: Tensor): Unit =
     fileList.foreach {
       case (yData, file) =>

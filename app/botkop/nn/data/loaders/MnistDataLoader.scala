@@ -1,4 +1,4 @@
-package botkop.data
+package botkop.nn.data.loaders
 
 import java.io.{BufferedInputStream, FileInputStream}
 import java.util.zip.GZIPInputStream

@@ -28,7 +28,9 @@ package object gates {
   case object Start
   case object Pause
   case object NextBatch
-  case class Epoch(epoch: Int)
+  case class Epoch(epoch: Int, ts: Long = System.currentTimeMillis()) {
+    def inc = Epoch(epoch + 1)
+  }
 
   case class CostLogEntry(source: String, id: Int, cost: Double)
   object CostLogEntry {

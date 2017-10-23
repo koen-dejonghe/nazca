@@ -5,7 +5,7 @@ import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import akka.pattern.ask
 import akka.util.Timeout
-import botkop.data.DataLoader
+import botkop.nn.data.loaders.DataLoader
 import botkop.nn.gates._
 
 import scala.concurrent.Await
@@ -23,7 +23,7 @@ class Evaluator(source: String, dataLoader: DataLoader, entryGate: ActorRef)
   mediator ! Subscribe("control", self)
 
   override def receive: Receive = {
-    case Epoch(epoch) =>
+    case Epoch(epoch, _) =>
       val s: (Int, Double, Double) =
         dataLoader.foldLeft((0, 0.0, 0.0)) {
           case ((n, c, a), batch) =>

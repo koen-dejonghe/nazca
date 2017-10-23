@@ -103,6 +103,9 @@ class BatchNormGate(shape: Array[Int],
     case Forward(x, y) =>
       val cache = trainingActivation(x, y)
       context become accept(sender(), cache)
+    case Eval(source, id, x, y) =>
+      val out = testActivation(x)
+      next forward Eval(source, id, out, y)
   }
 
   override def persistenceId: String = name

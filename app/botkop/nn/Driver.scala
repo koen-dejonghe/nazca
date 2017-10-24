@@ -27,7 +27,7 @@ class Driver extends Actor with Timers with ActorLogging {
     .withDimensions(32 * 32 * 3, 100, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
-    // .withRegularization(1e-5)
+    .withRegularization(1e-5)
 
   val miniBatchSize = 128
   val trainingDataLoader =

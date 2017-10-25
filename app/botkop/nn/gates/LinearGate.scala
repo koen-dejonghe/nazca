@@ -7,6 +7,7 @@ import akka.persistence._
 import botkop.nn.optimizers.Optimizer
 import botkop.{numsca => ns}
 import botkop.numsca.Tensor
+import org.nd4j.linalg.api.ndarray.INDArray
 
 import scala.language.postfixOps
 
@@ -78,7 +79,19 @@ class LinearGate(shape: Array[Int],
 
     case Epoch(_, _) => // adjust learning rate every epoch
       optimizer.updateLearningRate()
+      if (name == "linear-1") showImage()
 
+  }
+
+  def showImage(): Unit = {
+
+    val a: INDArray = w.array.getRow(0)
+    val d = a.data().asFloat()
+
+    println(d.min)
+    println(d.max)
+
+    // println(a.shape().toList)
   }
 
   override def receiveRecover: Receive = {

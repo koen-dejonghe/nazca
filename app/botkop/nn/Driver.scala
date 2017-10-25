@@ -19,23 +19,23 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val system: ActorSystem = context.system
 
-  // def optimizer = Adam(learningRate = 0.001)
-  def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
+  def optimizer = Adam(learningRate = 0.001)
+  // def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
 
-  val template: Network = ((Linear + BatchNorm + Relu) * 2)
+  val template: Network = ((Linear + Relu) * 2)
   // .withDimensions(784, 50, 10)
-    .withDimensions(32 * 32 * 3, 100, 10)
+    .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
-    .withRegularization(1e-5)
+    // .withRegularization(1e-5)
 
   val miniBatchSize = 128
   val trainingDataLoader =
-    new Cifar10DataLoader(mode = "train", miniBatchSize)
+    new Cifar10DataLoader(mode = "train", miniBatchSize, take=Some(128))
   val devEvalDataLoader =
-    new Cifar10DataLoader(mode = "dev", 512)
+    new Cifar10DataLoader(mode = "dev", miniBatchSize, take=Some(128))
   val trainEvalDataLoader =
-    new Cifar10DataLoader(mode = "train", miniBatchSize, take = Some(2048))
+    new Cifar10DataLoader(mode = "train", miniBatchSize, take = Some(128))
 
   // val trainingDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 16)
@@ -44,7 +44,7 @@ class Driver extends Actor with Timers with ActorLogging {
   // val trainEvalDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 256, take = Some(2048))
 
-  timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
+  // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
   override def receive: Receive = empty
 

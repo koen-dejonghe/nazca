@@ -23,7 +23,7 @@ class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
       val (cost, dal) = costFunction(al, y)
       sender() ! Backward(dal)
 
-      if (i % 100 == 0) {
+      if (i % 10 == 0) {
         mediator ! Publish("monitor", CostLogEntry("train", i, cost))
       }
       context become accept(i + 1)

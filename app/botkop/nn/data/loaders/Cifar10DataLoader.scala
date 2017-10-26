@@ -147,6 +147,7 @@ object Cifar10DataLoader extends LazyLogging {
 
   def main(args: Array[String]): Unit = {
     val trainingFileList = getListOfFiles("data/cifar-10/train")
+    val devFileList = getListOfFiles("data/cifar-10/test")
 
     logger.debug("caculating mean image from training set")
     // cannot use parallel collection for computing mean!
@@ -156,7 +157,7 @@ object Cifar10DataLoader extends LazyLogging {
     serializeDataset("data/cifar-10/train.yx", trainingFileList, meanImage)
 
     logger.debug("serializing dev set")
-    serializeDataset("data/cifar-10/dev.yx", trainingFileList, meanImage)
+    serializeDataset("data/cifar-10/dev.yx", devFileList, meanImage)
   }
 
 }

@@ -31,7 +31,9 @@ class Driver extends Actor with Timers with ActorLogging {
 
   val miniBatchSize = 128
   val trainingDataLoader =
-    new Cifar10DataLoader(mode = "train", miniBatchSize, take=Some(128))
+    new Cifar10DataLoader(mode = "train", miniBatchSize
+       , take=Some(128)
+    )
   val devEvalDataLoader =
     new Cifar10DataLoader(mode = "dev", miniBatchSize, take=Some(128))
   val trainEvalDataLoader =
@@ -44,7 +46,7 @@ class Driver extends Actor with Timers with ActorLogging {
   // val trainEvalDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 256, take = Some(2048))
 
-  // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
+  timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
   override def receive: Receive = empty
 

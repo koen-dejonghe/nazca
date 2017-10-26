@@ -86,11 +86,11 @@ class LinearGate(shape: Array[Int],
   def showImage(): Unit = {
 
     val a: INDArray = w.array.getRow(0)
-    val d = a.data().asFloat()
+    val fa = a.data().asFloat()
 
-    println(d.min)
-    println(d.max)
-
+    val ffa = fa
+      .map(f => math.max(255, math.round((f + fa.min) * 256)))
+      .grouped(3)
     // println(a.shape().toList)
   }
 
@@ -100,7 +100,6 @@ class LinearGate(shape: Array[Int],
       w = snapshot.w
       b = snapshot.b
       optimizer = snapshot.optimizer
-      accept() // todo: probably not needed
   }
 
   override def persistenceId: String = name

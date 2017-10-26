@@ -22,6 +22,8 @@ class Driver extends Actor with Timers with ActorLogging {
   // def optimizer = Adam(learningRate = 0.001)
   def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
 
+  implicit val projectName: String = "cifar10LBR2"
+
   val template: Network = ((Linear + BatchNorm + Relu) * 2)
   // .withDimensions(784, 50, 10)
     .withDimensions(32 * 32 * 3, 100, 10)

@@ -13,7 +13,7 @@ case class Network(gates: List[Gate] = List.empty,
                      GradientDescent(learningRate = 0.01),
                    regularization: Double = 0.0,
                    dropout: Double = 0.5,
-                   actors: List[ActorRef] = List.empty) {
+                   actors: List[ActorRef] = List.empty)(implicit projectName: String) {
 
   def +(other: Network) = Network(this.gates ++ other.gates)
   def +(layer: Gate) = Network(this.gates :+ layer)

@@ -45,29 +45,36 @@ package object gates {
   case class SetLearningRate(lr: Double)
 
   sealed trait Gate {
-    def +(other: Gate)(implicit system: ActorSystem): Network =
+    def +(other: Gate)(implicit system: ActorSystem,
+                       projectName: String): Network =
       Network(List(this, other))
-    def *(i: Int)(implicit system: ActorSystem): Network =
+    def *(i: Int)(implicit system: ActorSystem, projectName: String): Network =
       Network(List.fill(i)(this))
+    def name(layer: Int)(implicit projectName: String): String
   }
 
   case object Relu extends Gate {
-    def name(layer: Int) = s"relu-$layer"
+    override def name(layer: Int)(implicit projectName: String) =
+      s"${projectName}_relu-$layer"
   }
 
   case object Sigmoid extends Gate {
-    def name(layer: Int) = s"sigmoid-$layer"
+    override def name(layer: Int)(implicit projectName: String) =
+      s"${projectName}_sigmoid-$layer"
   }
 
   case object Linear extends Gate {
-    def name(layer: Int) = s"linear-$layer"
+    override def name(layer: Int)(implicit projectName: String) =
+      s"${projectName}_linear-$layer"
   }
 
   case object Dropout extends Gate {
-    def name(layer: Int) = s"dropout-$layer"
+    override def name(layer: Int)(implicit projectName: String) =
+      s"${projectName}_dropout-$layer"
   }
 
   case object BatchNorm extends Gate {
-    def name(layer: Int) = s"batchnorm-$layer"
+    override def name(layer: Int)(implicit projectName: String) =
+      s"${projectName}_batchnorm-$layer"
   }
 }

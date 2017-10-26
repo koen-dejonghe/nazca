@@ -31,7 +31,7 @@ class Driver extends Actor with Timers with ActorLogging {
     .withCostFunction(softmaxCost)
     .withRegularization(1e-5)
 
-  val miniBatchSize = 128
+  val miniBatchSize = 1024
   val trainingDataLoader =
     new Cifar10DataLoader(mode = "train", miniBatchSize)
   val devEvalDataLoader =

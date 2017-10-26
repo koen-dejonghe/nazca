@@ -19,19 +19,19 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val system: ActorSystem = context.system
 
-  def optimizer = Adam(learningRate = 0.001, learningRateDecay = 0.9)
+  def optimizer = Adam(learningRate = 0.001, learningRateDecay = 0.95)
   // def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
 
   implicit val projectName: String = "cifar10LBR2"
 
   val template: Network = ((Linear + BatchNorm + Relu) * 2 + Linear)
   // .withDimensions(784, 50, 10)
-    .withDimensions(32 * 32 * 3, 300, 100, 10)
+    .withDimensions(32 * 32 * 3, 100, 100, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
     .withRegularization(1e-5)
 
-  val miniBatchSize = 1024
+  val miniBatchSize = 64
   val trainingDataLoader =
     new Cifar10DataLoader(mode = "train", miniBatchSize)
   val devEvalDataLoader =

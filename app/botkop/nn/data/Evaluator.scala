@@ -15,9 +15,7 @@ class Evaluator(source: String, dataLoader: DataLoader, entryGate: ActorRef)
     extends Actor
     with ActorLogging {
 
-  implicit val timeout: Timeout = Timeout(1 second) // needed for `?`
-
-  val parallelism = 4
+  val parallelism: Int = Runtime.getRuntime.availableProcessors() / 2
 
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("monitor", self)
@@ -31,27 +29,8 @@ class Evaluator(source: String, dataLoader: DataLoader, entryGate: ActorRef)
         entryGate ! Eval(source, epoch, iterator.next())
       }
 
-      // if (iterator.hasNext) {
-        entryGate ! Eval(source, epoch, iterator.next())
-        val entry = EvalEntry(source, epoch, 0.0, 0.0)
-        context become accumulate(iterator, epoch, entry)
-      // } else {
-        // log.error("iterator has no elements")
-      // }
-    /*
-      val s: (Int, Double, Double) =
-        dataLoader.foldLeft((0, 0.0, 0.0)) {
-          case ((n, c, a), batch) =>
-            val f = (entryGate ? Eval(source, epoch, batch)).mapTo[EvalEntry]
-            val r = Await.result(f, timeout.duration)
-            (n + 1, c + r.cost, a + r.accuracy)
-        }
-
-      val cost = s._2 / s._1
-      val acc = s._3 / s._1
-
-      mediator ! Publish("monitor", EvalEntry(source, epoch, cost, acc))
-     */
+      val entry = EvalEntry(source, epoch, 0.0, 0.0)
+      context become accumulate(iterator, epoch, entry)
 
     case Quit =>
       self ! PoisonPill

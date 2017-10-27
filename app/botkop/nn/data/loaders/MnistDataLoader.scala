@@ -16,7 +16,12 @@ class MnistDataLoader(file: String,
     extends DataLoader
     with LazyLogging {
 
-  override val numSamples: Int = Source.fromInputStream(gzis(file)).length
+  override val numSamples: Int = take match {
+    case Some(n) => n
+    case None =>
+      Source.fromInputStream(gzis(file)).length
+  }
+
   override val numBatches: Int =
     (numSamples / miniBatchSize) +
       (if (numSamples % miniBatchSize == 0) 0 else 1)

@@ -28,7 +28,11 @@ class Cifar10DataLoader(mode: String,
     .filter(_.isFile)
     .toList
 
-  override val numSamples: Int = files.length
+  override val numSamples: Int = take match {
+    case Some(n) => n
+    case None => files.length
+  }
+
   override val numBatches: Int =
     (numSamples / miniBatchSize) +
       (if (numSamples % miniBatchSize == 0) 0 else 1)

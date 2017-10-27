@@ -19,8 +19,9 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val system: ActorSystem = context.system
 
-  def optimizer = Adam(learningRate = 0.001, learningRateDecay = 0.95)
-  // def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
+  //
+  // def optimizer = Adam(learningRate = 0.001, learningRateDecay = 0.95)
+  def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
 
   implicit val projectName: String = "cifar10LBR2"
 
@@ -37,7 +38,9 @@ class Driver extends Actor with Timers with ActorLogging {
   val devEvalDataLoader =
     new Cifar10DataLoader(mode = "dev", miniBatchSize)
   val trainEvalDataLoader =
-    new Cifar10DataLoader(mode = "train", miniBatchSize, take = Some(10000))
+    new Cifar10DataLoader(mode = "train",
+                          miniBatchSize,
+                          take = Some(devEvalDataLoader.numSamples))
 
   // val trainingDataLoader =
   // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 16)

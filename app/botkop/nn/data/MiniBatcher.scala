@@ -46,5 +46,5 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
 
 object MiniBatcher {
   def props(dataLoader: DataLoader, entryGate: ActorRef) =
-    Props(new MiniBatcher(dataLoader, entryGate)).withDispatcher("blocking-io-dispatcher")
+    Props(new MiniBatcher(dataLoader, entryGate)).withDispatcher("deser-dispatcher")
 }

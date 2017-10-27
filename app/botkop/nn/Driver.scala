@@ -24,9 +24,9 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val projectName: String = "cifar10LBR2"
 
-  val template: Network = ((Linear + BatchNorm + Relu) * 4)
+  val template: Network = ((Linear + Relu) * 2)
   // .withDimensions(784, 50, 10)
-    .withDimensions(32 * 32 * 3, 50, 50, 50, 10)
+    .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(optimizer)
     .withCostFunction(softmaxCost)
     .withRegularization(1e-5)
@@ -59,7 +59,6 @@ class Driver extends Actor with Timers with ActorLogging {
         system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate.get))
       miniBatcher ! NextBatch
 
-      /*
       val devEvaluator: ActorRef =
         system.actorOf(
           Evaluator.props("dev-eval", devEvalDataLoader, nn.entryGate.get))
@@ -67,7 +66,6 @@ class Driver extends Actor with Timers with ActorLogging {
       val trainEvaluator: ActorRef =
         system.actorOf(
           Evaluator.props("train-eval", trainEvalDataLoader, nn.entryGate.get))
-      */
 
       context become running(nn, miniBatcher)
   }

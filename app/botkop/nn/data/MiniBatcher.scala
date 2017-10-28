@@ -17,6 +17,7 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
   override def receive: Receive = {
     log.info("starting epoch 1")
     val it = dataLoader.iterator
+    // assuming at least one batch
     accept(it.next(), it, Epoch(1))
   }
 
@@ -45,6 +46,6 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
 }
 
 object MiniBatcher {
-  def props(dataLoader: DataLoader, entryGate: ActorRef) =
+  def props(dataLoader: DataLoader, entryGate: ActorRef): Props =
     Props(new MiniBatcher(dataLoader, entryGate)).withDispatcher("deser-dispatcher")
 }

@@ -29,7 +29,7 @@ class Cifar10DataLoader(mode: String,
     .toList
 
   override val numSamples: Int = take match {
-    case Some(n) => n
+    case Some(n) => math.max(n, files.length)
     case None => files.length
   }
 
@@ -40,7 +40,7 @@ class Cifar10DataLoader(mode: String,
   override def iterator: Iterator[(Tensor, Tensor)] = {
     val batches: Iterator[List[File]] = new Random(seed)
       .shuffle(files)
-      .take(take.getOrElse(numSamples))
+      .take(numSamples)
       .grouped(miniBatchSize)
 
     batches.map { sampleFiles =>

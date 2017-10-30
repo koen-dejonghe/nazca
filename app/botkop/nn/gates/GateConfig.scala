@@ -1,9 +1,11 @@
 package botkop.nn.gates
 
+import akka.actor.{ActorRef, ActorSystem}
 import play.api.libs.json._
 
 trait GateConfig {
-
+  def materialize(next: Option[ActorRef], index: Int)(
+      implicit system: ActorSystem, projectName: String): ActorRef
 }
 
 object GateConfig {
@@ -43,9 +45,10 @@ object GateConfig {
         (b, Some(Json.toJson(b)(LinearConfig.f)))
       case b: OutputConfig =>
         (b, Some(Json.toJson(b)(OutputConfig.f)))
-      case ReluConfig => (ReluConfig, None)
+      case ReluConfig    => (ReluConfig, None)
       case SigmoidConfig => (SigmoidConfig, None)
-      case c => throw new IllegalArgumentException(s"unknown class ${c.getClass}")
+      case c =>
+        throw new IllegalArgumentException(s"unknown class ${c.getClass}")
     }
 
     sub match {

@@ -7,6 +7,77 @@ import play.api.libs.json.{JsObject, Json, Writes}
 
 import scala.annotation.tailrec
 
+case class Network(gates: List[GateConfig]) {
+
+  def materialize(implicit system: ActorSystem,
+                  projectName: String): List[ActorRef] = {
+
+    val last = gates.last.materialize(None, )
+
+
+    // val outputConfig = gates.last.asInstanceOf[OutputConfig]
+    // val outputGate = system.actorOf(OutputGate.props(outputConfig), "output")
+
+    // build(gates.reverse, gates.length, List(outputGate))
+
+    @tailrec
+    def build(gates: List[GateConfig],
+              i: Int,
+              network: List[ActorRef]): List[ActorRef] = gates match {
+      case Nil => network
+      case gc :: gcs =>
+        gc match {
+
+          case c: BatchNormConfig =>
+            val props = BatchNormGate
+              .props(network.head, c)
+              .withDispatcher("gate-dispatcher")
+            val gate = system.actorOf(props, BatchNorm.name(i))
+            build(gcs, i - 1, gate :: network)
+
+          case c: DropoutConfig =>
+            val props = DropoutGate
+              .props(network.head, c)
+              .withDispatcher("gate-dispatcher")
+            val gate = system.actorOf(props, Dropout.name(i))
+            build(gcs, i - 1, gate :: network)
+
+          case ReluConfig =>
+            val props = ReluGate
+              .props(network.head)
+              .withDispatcher("gate-dispatcher")
+            val gate = system.actorOf(props, Relu.name(i))
+            build(gcs, i - 1, gate :: network)
+
+          case SigmoidConfig =>
+            val props = SigmoidGate
+              .props(network.head)
+              .withDispatcher("gate-dispatcher")
+            val gate = system.actorOf(props, Sigmoid.name(i))
+            build(gcs, i - 1, gate :: network)
+
+          case c: BatchNormConfig =>
+            val props = BatchNormGate
+              .props(network.head, c)
+              .withDispatcher("gate-dispatcher")
+            val gate = system.actorOf(props, BatchNorm.name(i))
+            build(gcs, i - 1, gate :: network)
+
+          case c: LinearConfig =>
+            val props = LinearGate
+              .props(network.head, c)
+              .withDispatcher("gate-dispatcher")
+            val gate = system.actorOf(props, Linear.name(i))
+            build(gcs, i - 1, gate :: network)
+        }
+
+    }
+
+  }
+
+}
+
+/*
 case class Network(
     gates: List[GateStub] = List.empty,
     dimensions: Array[Int] = Array.empty,
@@ -111,3 +182,4 @@ object Network {
       "dimensions" -> network.dimensions
   )
 }
+ */

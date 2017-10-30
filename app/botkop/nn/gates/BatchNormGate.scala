@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorLogging, ActorRef, Props}
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.persistence._
@@ -135,7 +135,17 @@ case class BatchNormCache(invVar: Tensor, xHat: Tensor)
 case class BatchNormConfig(shape: List[Int],
                            eps: Float = 1e-5f,
                            momentum: Float = 0.9f)
-    extends GateConfig
+    extends GateConfig {
+
+  def materialize(next: ActorRef, name: String)(
+      implicit system: ActorSystem): ActorRef = {
+    val props = BatchNormGate
+      .props(next, this)
+      .withDispatcher("gate-dispatcher")
+    system.actorOf(props, name)
+  }
+
+}
 object BatchNormConfig {
   implicit val f: Format[BatchNormConfig] = Json.format
 }

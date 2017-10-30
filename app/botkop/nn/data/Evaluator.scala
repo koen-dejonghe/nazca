@@ -3,12 +3,10 @@ package botkop.nn.data
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
-import akka.util.Timeout
 import botkop.nn.data.loaders.DataLoader
 import botkop.nn.gates._
 import botkop.numsca.Tensor
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class Evaluator(source: String, dataLoader: DataLoader, entryGate: ActorRef)

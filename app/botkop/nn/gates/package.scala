@@ -44,9 +44,9 @@ package object gates {
 
   case class SetLearningRate(lr: Double)
 
-  sealed trait Gate {
-    def +(other: Gate)(implicit system: ActorSystem,
-                       projectName: String): Network =
+  sealed trait GateStub {
+    def +(other: GateStub)(implicit system: ActorSystem,
+                           projectName: String): Network =
       Network(List(this, other))
     def *(i: Int)(implicit system: ActorSystem, projectName: String): Network =
       Network(List.fill(i)(this))
@@ -55,23 +55,23 @@ package object gates {
       s"${projectName}_$category-$layer"
   }
 
-  case object Relu extends Gate {
+  case object Relu extends GateStub {
     override val category = "relu"
   }
 
-  case object Sigmoid extends Gate {
+  case object Sigmoid extends GateStub {
     override val category = "sigmoid"
   }
 
-  case object Linear extends Gate {
+  case object Linear extends GateStub {
     override val category = "linear"
   }
 
-  case object Dropout extends Gate {
+  case object Dropout extends GateStub {
     override val category = "dropout"
   }
 
-  case object BatchNorm extends Gate {
+  case object BatchNorm extends GateStub {
     override val category = "batchnorm"
   }
 }

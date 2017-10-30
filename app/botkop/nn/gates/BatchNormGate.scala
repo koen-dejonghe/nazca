@@ -6,13 +6,13 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.persistence._
 import botkop.numsca.Tensor
 import botkop.{numsca => ns}
+import play.api.libs.json.{Format, Json}
 
-class BatchNormGate(shape: Array[Int],
-                    next: ActorRef,
-                    eps: Float,
-                    momentum: Float)
+class BatchNormGate(next: ActorRef, config: BatchNormConfig)
     extends PersistentActor
     with ActorLogging {
+
+  import config._
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
@@ -20,7 +20,7 @@ class BatchNormGate(shape: Array[Int],
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
 
-  val Array(d, n) = shape
+  val Array(d, n) = shape.toArray
 
   val runningMean: Tensor = ns.zeros(d, 1)
   val runningVar: Tensor = ns.zeros(d, 1)
@@ -121,11 +121,8 @@ class BatchNormGate(shape: Array[Int],
 }
 
 object BatchNormGate {
-  def props(shape: Array[Int],
-            next: ActorRef,
-            eps: Float = 1e-5f,
-            momentum: Float = 0.9f) =
-    Props(new BatchNormGate(shape, next, eps, momentum))
+  def props(next: ActorRef, config: BatchNormConfig) =
+    Props(new BatchNormGate(next, config))
 }
 
 case class BatchNormState(runningMean: Tensor,
@@ -134,3 +131,11 @@ case class BatchNormState(runningMean: Tensor,
                           beta: Tensor)
 
 case class BatchNormCache(invVar: Tensor, xHat: Tensor)
+
+case class BatchNormConfig(shape: List[Int],
+                           eps: Float = 1e-5f,
+                           momentum: Float = 0.9f)
+    extends GateConfig
+object BatchNormConfig {
+  implicit val f: Format[BatchNormConfig] = Json.format
+}

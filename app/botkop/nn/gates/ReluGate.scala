@@ -40,3 +40,5 @@ class ReluGate(next: ActorRef) extends Actor with ActorLogging {
 object ReluGate {
   def props(next: ActorRef) = Props(new ReluGate(next))
 }
+
+case object ReluConfig extends GateConfig

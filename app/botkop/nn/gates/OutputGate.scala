@@ -3,12 +3,15 @@ package botkop.nn.gates
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
+import botkop.nn.costs.Cost
 import botkop.numsca
 import botkop.numsca.Tensor
+import play.api.libs.json.{Format, Json}
 
-class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
-    extends Actor
-    with ActorLogging {
+// class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
+class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
+
+  import config._
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
@@ -20,18 +23,18 @@ class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
   def accept(i: Int = 0): Receive = {
 
     case Forward(al, y) =>
-      val (cost, dal) = costFunction(al, y)
+      val (c, dal) = cost.costFunction(al, y)
       sender() ! Backward(dal)
 
       if (i % 10 == 0) {
-        mediator ! Publish("monitor", CostLogEntry("train", i, cost))
+        mediator ! Publish("monitor", CostLogEntry("train", i, c))
       }
       context become accept(i + 1)
 
     case Eval(source, id, x, y) =>
-      val (cost, _) = costFunction(x, y)
+      val (c, _) = cost.costFunction(x, y)
       val acc = accuracy(x, y)
-      sender ! EvalEntry(source, id, cost, acc)
+      sender ! EvalEntry(source, id, c, acc)
 
     case p: Predict =>
       mediator ! Publish("predict", p)
@@ -47,6 +50,13 @@ class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
 }
 
 object OutputGate {
-  def props(costFunction: (Tensor, Tensor) => (Double, Tensor)) =
-    Props(new OutputGate(costFunction))
+  // def props(costFunction: (Tensor, Tensor) => (Double, Tensor)) =
+  // Props(new OutputGate(costFunction))
+  def props(config: OutputConfig) = Props(new OutputGate(config: OutputConfig))
 }
+
+case class OutputConfig(cost: Cost) extends GateConfig
+object OutputConfig {
+  implicit val f: Format[OutputConfig] = Json.format
+}
+

@@ -41,3 +41,5 @@ class SigmoidGate(next: ActorRef) extends Actor with ActorLogging {
 object SigmoidGate {
   def props(next: ActorRef) = Props(new SigmoidGate(next))
 }
+
+case object SigmoidConfig extends GateConfig

@@ -7,7 +7,7 @@ import botkop.nn.costs._
 import botkop.nn.data.loaders.Cifar10DataLoader
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
-import botkop.nn.optimizers.{Adam, AdamParameters}
+import botkop.nn.optimizers.Adam
 
 import scala.language.postfixOps
 
@@ -19,7 +19,7 @@ class Driver extends Actor with Timers with ActorLogging {
   implicit val system: ActorSystem = context.system
 
   //
-  def optimizer = Adam(AdamParameters(learningRate = 0.001, learningRateDecay = 0.95))
+  def optimizer = Adam(learningRate = 0.001, learningRateDecay = 0.95)
   // def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
 
   implicit val projectName: String = "cifar10LBR2"
@@ -28,7 +28,7 @@ class Driver extends Actor with Timers with ActorLogging {
   // .withDimensions(784, 50, 10)
     .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(optimizer)
-    .withCostFunction(softmaxCost)
+    .withCostFunction(Softmax)
     .withRegularization(1e-5)
 
   val miniBatchSize = 64

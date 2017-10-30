@@ -1,6 +1,7 @@
 package botkop.nn.optimizers
 
 import botkop.numsca.Tensor
+import play.api.libs.json._
 
 trait Optimizer extends Serializable {
 
@@ -17,6 +18,47 @@ trait Optimizer extends Serializable {
 
 }
 
-trait OptimizerParameters
+/**
+  * json boilerplate
+  */
+object Optimizer {
+  def reads(json: JsValue): JsResult[Optimizer] = {
 
+    def from(name: String, data: JsObject): JsResult[Optimizer] =
+      name match {
+        case "Adam" =>
+          Json.fromJson[Adam](data)
+        case "GradientDescent" =>
+          Json.fromJson[GradientDescent](data)
+        case "Momentum" =>
+          Json.fromJson[Momentum](data)
+        case "Nesterov" =>
+          Json.fromJson[Nesterov](data)
+        case _ => JsError(s"Unknown class '$name'")
+      }
+
+    for {
+      name <- (json \ "class").validate[String]
+      data <- (json \ "data").validate[JsObject]
+      result <- from(name, data)
+    } yield result
+  }
+
+  def writes(foo: Optimizer): JsValue = {
+    val (prod: Product, sub) = foo match {
+      case b: Adam =>
+        (b, Json.toJson(b)(Adam.f))
+      case b: GradientDescent =>
+        (b, Json.toJson(b)(GradientDescent.f))
+      case b: Momentum =>
+        (b, Json.toJson(b)(Momentum.f))
+      case b: Nesterov =>
+        (b, Json.toJson(b)(Nesterov.f))
+    }
+    JsObject(Seq("class" -> JsString(prod.productPrefix), "data" -> sub))
+  }
+
+  implicit val r: Reads[Optimizer] = Optimizer.reads
+  implicit val w: Writes[Optimizer] = Optimizer.writes
+}
 

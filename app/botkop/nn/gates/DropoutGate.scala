@@ -3,10 +3,15 @@ package botkop.nn.gates
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import botkop.numsca
 import botkop.numsca.Tensor
+import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
-class DropoutGate(next: ActorRef, p: Double) extends Actor with ActorLogging {
+class DropoutGate(next: ActorRef, config: DropoutConfig)
+    extends Actor
+    with ActorLogging {
+
+  import config._
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
@@ -35,6 +40,11 @@ class DropoutGate(next: ActorRef, p: Double) extends Actor with ActorLogging {
 }
 
 object DropoutGate {
-  def props(next: ActorRef, p: Double): Props =
-    Props(new DropoutGate(next, p))
+  def props(next: ActorRef, config: DropoutConfig): Props =
+    Props(new DropoutGate(next, config))
+}
+
+case class DropoutConfig(p: Double = 0.5) extends GateConfig
+object DropoutConfig {
+  implicit val f: Format[DropoutConfig] = Json.format
 }

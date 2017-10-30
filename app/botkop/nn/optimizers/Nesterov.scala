@@ -3,6 +3,7 @@ package botkop.nn.optimizers
 import botkop.numsca
 import botkop.numsca.Tensor
 import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
@@ -41,3 +42,8 @@ case class Nesterov(var learningRate: Double,
     logger.debug(s"learning rate is now $learningRate")
   }
 }
+
+object Nesterov {
+  implicit val f: Format[Nesterov] = Json.format
+}
+

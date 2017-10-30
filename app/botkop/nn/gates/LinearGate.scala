@@ -7,16 +7,22 @@ import akka.persistence._
 import botkop.nn.optimizers.Optimizer
 import botkop.{numsca => ns}
 import botkop.numsca.Tensor
+import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
-class LinearGate(shape: Array[Int],
-                 next: ActorRef,
+/*
+class LinearGate(next: ActorRef,
+                 shape: Array[Int],
                  regularization: Double,
                  var optimizer: Optimizer,
                  seed: Long = 231)
+ */
+class LinearGate(next: ActorRef, config: LinearConfig)
     extends PersistentActor
     with ActorLogging {
+
+  import config._
 
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
@@ -27,7 +33,7 @@ class LinearGate(shape: Array[Int],
   val name: String = self.path.name
   log.debug(s"my name is $name")
 
-  var w: Tensor = ns.randn(shape) * math.sqrt(2.0 / shape(1))
+  var w: Tensor = ns.randn(shape.toArray) * math.sqrt(2.0 / shape(1))
   var b: Tensor = ns.zeros(shape.head, 1)
   var cache: Option[(ActorRef, Tensor)] = None
 
@@ -95,12 +101,28 @@ class LinearGate(shape: Array[Int],
 
 }
 
+/*
 object LinearGate {
-  def props(shape: Array[Int],
-            next: ActorRef,
+  def props(next: ActorRef,
+            shape: Array[Int],
             regularization: Double,
             optimizer: Optimizer) =
-    Props(new LinearGate(shape, next, regularization, optimizer))
+    Props(new LinearGate(next, shape, regularization, optimizer))
+}
+ */
+
+object LinearGate {
+  def props(next: ActorRef, config: LinearConfig) =
+    Props(new LinearGate(next, config))
 }
 
 case class LinearState(w: Tensor, b: Tensor, optimizer: Optimizer)
+
+case class LinearConfig(shape: List[Int],
+                        regularization: Double,
+                        var optimizer: Optimizer,
+                        seed: Long = 231L)
+    extends GateConfig
+object LinearConfig {
+  implicit val f: Format[LinearConfig] = Json.format
+}

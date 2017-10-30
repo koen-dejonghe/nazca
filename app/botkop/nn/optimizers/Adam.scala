@@ -3,21 +3,17 @@ package botkop.nn.optimizers
 import botkop.numsca
 import botkop.numsca.Tensor
 import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
-/*
 case class Adam(var learningRate: Double,
                 beta1: Double = 0.9,
                 beta2: Double = 0.999,
                 epsilon: Double = 1e-8,
                 learningRateDecay: Double = 0.95)
-*/
-  case class Adam(parameters: AdamParameters)
     extends Optimizer
     with LazyLogging {
-
-  import parameters._
 
   var t = 1
 
@@ -64,9 +60,6 @@ case class Adam(var learningRate: Double,
   }
 }
 
-case class AdamParameters(var learningRate: Double,
-                          learningRateDecay: Double,
-                          beta1: Double = 0.9,
-                          beta2: Double = 0.999,
-                          epsilon: Double = 1e-8)
-    extends OptimizerParameters
+object Adam {
+  implicit val f: Format[Adam] = Json.format
+}

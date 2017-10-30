@@ -14,6 +14,9 @@ trait Optimizer extends Serializable {
   def setLearningRate(learningRate: Double): Unit
 
   def updateLearningRate(): Unit
+
 }
+
+trait OptimizerParameters
 
 

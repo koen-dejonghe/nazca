@@ -50,31 +50,28 @@ package object gates {
       Network(List(this, other))
     def *(i: Int)(implicit system: ActorSystem, projectName: String): Network =
       Network(List.fill(i)(this))
-    def name(layer: Int)(implicit projectName: String): String
+    def category: String
+    def name(layer: Int)(implicit projectName: String) =
+      s"${projectName}_$category-$layer"
   }
 
   case object Relu extends Gate {
-    override def name(layer: Int)(implicit projectName: String) =
-      s"${projectName}_relu-$layer"
+    override val category = "relu"
   }
 
   case object Sigmoid extends Gate {
-    override def name(layer: Int)(implicit projectName: String) =
-      s"${projectName}_sigmoid-$layer"
+    override val category = "sigmoid"
   }
 
   case object Linear extends Gate {
-    override def name(layer: Int)(implicit projectName: String) =
-      s"${projectName}_linear-$layer"
+    override val category = "linear"
   }
 
   case object Dropout extends Gate {
-    override def name(layer: Int)(implicit projectName: String) =
-      s"${projectName}_dropout-$layer"
+    override val category = "dropout"
   }
 
   case object BatchNorm extends Gate {
-    override def name(layer: Int)(implicit projectName: String) =
-      s"${projectName}_batchnorm-$layer"
+    override val category = "batchnorm"
   }
 }

@@ -6,12 +6,18 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.language.postfixOps
 
+/*
 case class Adam(var learningRate: Double,
                 beta1: Double = 0.9,
                 beta2: Double = 0.999,
                 epsilon: Double = 1e-8,
                 learningRateDecay: Double = 0.95)
-    extends Optimizer with LazyLogging {
+*/
+  case class Adam(parameters: AdamParameters)
+    extends Optimizer
+    with LazyLogging {
+
+  import parameters._
 
   var t = 1
 
@@ -49,7 +55,7 @@ case class Adam(var learningRate: Double,
 
   override def setLearningRate(lr: Double): Unit = {
     logger.info(s"changing learning rate from $learningRate to $lr")
-    this.learningRate = lr
+    learningRate = lr
   }
 
   override def updateLearningRate(): Unit = {
@@ -57,3 +63,10 @@ case class Adam(var learningRate: Double,
     logger.info(s"learning rate is now $learningRate")
   }
 }
+
+case class AdamParameters(var learningRate: Double,
+                          learningRateDecay: Double,
+                          beta1: Double = 0.9,
+                          beta2: Double = 0.999,
+                          epsilon: Double = 1e-8)
+    extends OptimizerParameters

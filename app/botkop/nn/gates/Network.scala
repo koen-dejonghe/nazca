@@ -3,17 +3,18 @@ package botkop.nn.gates
 import akka.actor.{ActorRef, ActorSystem, PoisonPill}
 import botkop.nn.costs._
 import botkop.nn.optimizers.{GradientDescent, Optimizer}
+import play.api.libs.json.{JsObject, Json, Writes}
 
 import scala.annotation.tailrec
 
-case class Network(gates: List[Gate] = List.empty,
-                   dimensions: Array[Int] = Array.empty,
-                   costFunction: CostFunction = crossEntropyCost,
-                   optimizer: () => Optimizer = () =>
-                     GradientDescent(learningRate = 0.01),
-                   regularization: Double = 0.0,
-                   dropout: Double = 0.5,
-                   actors: List[ActorRef] = List.empty)(implicit projectName: String) {
+case class Network(
+    gates: List[Gate] = List.empty,
+    dimensions: Array[Int] = Array.empty,
+    costFunction: CostFunction = crossEntropyCost,
+    optimizer: () => Optimizer = () => GradientDescent(learningRate = 0.01),
+    regularization: Double = 0.0,
+    dropout: Double = 0.5,
+    actors: List[ActorRef] = List.empty)(implicit projectName: String) {
 
   def +(other: Network) = Network(this.gates ++ other.gates)
   def +(layer: Gate) = Network(this.gates :+ layer)
@@ -56,35 +57,53 @@ case class Network(gates: List[Gate] = List.empty,
 
         case Relu =>
           val gate =
-            system.actorOf(ReluGate.props(network.head).withDispatcher("gate-dispatcher"), Relu.name(i))
+            system.actorOf(
+              ReluGate.props(network.head).withDispatcher("gate-dispatcher"),
+              Relu.name(i))
           build(gs, i, gate :: network)
 
         case Sigmoid =>
           val gate =
-            system.actorOf(SigmoidGate.props(network.head).withDispatcher("gate-dispatcher"), Sigmoid.name(i))
+            system.actorOf(
+              SigmoidGate.props(network.head).withDispatcher("gate-dispatcher"),
+              Sigmoid.name(i))
           build(gs, i, gate :: network)
 
         case Dropout =>
           val gate =
-            system.actorOf(DropoutGate.props(network.head, dropout).withDispatcher("gate-dispatcher"),
+            system.actorOf(DropoutGate
+                             .props(network.head, dropout)
+                             .withDispatcher("gate-dispatcher"),
                            Dropout.name(i))
           build(gs, i, gate :: network)
 
         case Linear =>
           val shape = dimensions.slice(i - 2, i).reverse
           val gate =
-            system.actorOf(LinearGate.props(shape,
-                                            network.head,
-                                            regularization,
-                                            optimizer()).withDispatcher("gate-dispatcher"),
-                           Linear.name(i - 1))
+            system.actorOf(
+              LinearGate
+                .props(shape, network.head, regularization, optimizer())
+                .withDispatcher("gate-dispatcher"),
+              Linear.name(i - 1))
           build(gs, i - 1, gate :: network)
 
         case BatchNorm =>
           val shape = dimensions.slice(i - 2, i).reverse
-          val gate = system.actorOf(BatchNormGate.props(shape, network.head).withDispatcher("gate-dispatcher"),
+          val gate = system.actorOf(BatchNormGate
+                                      .props(shape, network.head)
+                                      .withDispatcher("gate-dispatcher"),
                                     BatchNorm.name(i))
           build(gs, i, gate :: network)
       }
+  }
+}
+
+object Network {
+
+  implicit val networkWrites: Writes[Network] = new Writes[Network] {
+    def writes(network: Network): JsObject = Json.obj(
+      "gates" -> network.gates.map(_.category),
+      "dimensions" -> network.dimensions
+    )
   }
 }

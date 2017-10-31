@@ -4,9 +4,9 @@ import botkop.numsca
 import botkop.numsca.Tensor
 import play.api.libs.json.{Format, Json}
 
-case class Momentum(var learningRate: Double,
-                    beta: Double = 0.9,
-                    learningRateDecay: Double = 0.95)
+case class MomentumOptimizer(var learningRate: Double,
+                             beta: Double = 0.9,
+                             learningRateDecay: Double = 0.95)
     extends Optimizer {
 
   var vs = List.empty[Tensor]
@@ -32,6 +32,6 @@ case class Momentum(var learningRate: Double,
   override def updateLearningRate(): Unit = learningRate *= learningRateDecay
 }
 
-object Momentum {
-  implicit val f: Format[Momentum] = Json.format
+object MomentumOptimizer {
+  implicit val f: Format[MomentumOptimizer] = Json.format
 }

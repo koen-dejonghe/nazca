@@ -1,13 +1,8 @@
 package botkop.nn.gates
 
-import akka.actor.ActorSystem
-
 sealed trait GateStub {
-  def +(other: GateStub)(implicit system: ActorSystem,
-                         projectName: String): Network =
-    Network(List(this, other))
-  def *(i: Int)(implicit system: ActorSystem, projectName: String): Network =
-    Network(List.fill(i)(this))
+  def +(other: GateStub): NetworkBuilder = NetworkBuilder(List(this, other))
+  def *(i: Int): NetworkBuilder = NetworkBuilder(List.fill(i)(this))
   def category: String
   def name(layer: Int)(implicit projectName: String) =
     s"${projectName}_$category-$layer"
@@ -31,4 +26,8 @@ case object Dropout extends GateStub {
 
 case object BatchNorm extends GateStub {
   override val category = "batchnorm"
+}
+
+case object Output extends GateStub {
+  override val category = "output"
 }

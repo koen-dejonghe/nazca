@@ -1,78 +1,79 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorRef, ActorSystem, PoisonPill}
-import botkop.nn.costs._
-import botkop.nn.optimizers.{GradientDescent, Optimizer}
-import play.api.libs.json.{JsObject, Json, Writes}
+import akka.actor.{ActorRef, ActorSystem}
+import botkop.nn.costs.{Cost, CrossEntropy}
+import botkop.nn.optimizers._
 
-import scala.annotation.tailrec
-
-case class Network(gates: List[GateConfig]) {
-
+case class Network(config: List[GateConfig]) {
   def materialize(implicit system: ActorSystem,
-                  projectName: String): List[ActorRef] = {
+                  projectName: String): List[ActorRef] =
+    config.zipWithIndex.reverse.foldLeft(List.empty[ActorRef]) {
+      case (gs, (cfg, index)) =>
+        if (gs.isEmpty)
+          cfg.materialize(None, index) :: gs
+        else
+          cfg.materialize(Some(gs.head), index) :: gs
+    }
+}
 
-    val last = gates.last.materialize(None, )
+case class NetworkBuilder(gates: List[GateStub] = List.empty,
+                          dimensions: List[Int] = List.empty,
+                          cost: Cost = CrossEntropy,
+                          optimizer: OptimizerStub = GradientDescent,
+                          learningRate: Double = 0.001,
+                          learningRateDecay: Double = 0.95,
+                          regularization: Double = 0.0) {
 
+  def +(other: NetworkBuilder) = NetworkBuilder(this.gates ++ other.gates)
+  def +(layer: GateStub) = NetworkBuilder(this.gates :+ layer)
+  def *(i: Int): NetworkBuilder =
+    NetworkBuilder(List.tabulate(i)(_ => gates).flatten)
 
-    // val outputConfig = gates.last.asInstanceOf[OutputConfig]
-    // val outputGate = system.actorOf(OutputGate.props(outputConfig), "output")
+  def withGates(gs: GateStub*): NetworkBuilder = copy(gates = gs.toList)
+  def withDimensions(dims: Int*): NetworkBuilder = copy(dimensions = dims.toList)
+  def withCostFunction(cf: Cost): NetworkBuilder = copy(cost = cf)
+  def withOptimizer(o: OptimizerStub): NetworkBuilder = copy(optimizer = o)
+  def withLearningRate(d: Double): NetworkBuilder = copy(learningRate = d)
+  def withLearningRateDecay(d: Double): NetworkBuilder = copy(learningRateDecay = d)
+  def withRegularization(reg: Double): NetworkBuilder = copy(regularization = reg)
 
-    // build(gates.reverse, gates.length, List(outputGate))
+  def build(implicit system: ActorSystem, projectName: String): Network = {
+    require(gates.nonEmpty)
+    require(dimensions.nonEmpty)
+    val numLinearGates = gates.count(g => g == Linear)
+    require(numLinearGates == dimensions.length - 1)
 
-    @tailrec
-    def build(gates: List[GateConfig],
-              i: Int,
-              network: List[ActorRef]): List[ActorRef] = gates match {
-      case Nil => network
-      case gc :: gcs =>
-        gc match {
-
-          case c: BatchNormConfig =>
-            val props = BatchNormGate
-              .props(network.head, c)
-              .withDispatcher("gate-dispatcher")
-            val gate = system.actorOf(props, BatchNorm.name(i))
-            build(gcs, i - 1, gate :: network)
-
-          case c: DropoutConfig =>
-            val props = DropoutGate
-              .props(network.head, c)
-              .withDispatcher("gate-dispatcher")
-            val gate = system.actorOf(props, Dropout.name(i))
-            build(gcs, i - 1, gate :: network)
-
-          case ReluConfig =>
-            val props = ReluGate
-              .props(network.head)
-              .withDispatcher("gate-dispatcher")
-            val gate = system.actorOf(props, Relu.name(i))
-            build(gcs, i - 1, gate :: network)
-
-          case SigmoidConfig =>
-            val props = SigmoidGate
-              .props(network.head)
-              .withDispatcher("gate-dispatcher")
-            val gate = system.actorOf(props, Sigmoid.name(i))
-            build(gcs, i - 1, gate :: network)
-
-          case c: BatchNormConfig =>
-            val props = BatchNormGate
-              .props(network.head, c)
-              .withDispatcher("gate-dispatcher")
-            val gate = system.actorOf(props, BatchNorm.name(i))
-            build(gcs, i - 1, gate :: network)
-
-          case c: LinearConfig =>
-            val props = LinearGate
-              .props(network.head, c)
-              .withDispatcher("gate-dispatcher")
-            val gate = system.actorOf(props, Linear.name(i))
-            build(gcs, i - 1, gate :: network)
-        }
-
+    val op = optimizer match {
+      case Adam =>
+        AdamOptimizer(learningRate, learningRateDecay)
+      case GradientDescent =>
+        GradientDescentOptimizer(learningRate, learningRateDecay)
+      case Momentum =>
+        MomentumOptimizer(learningRate, learningRateDecay)
+      case Nesterov =>
+        NesterovOptimizer(learningRate, learningRateDecay)
     }
 
+    val configs = gates.zipWithIndex.map { case (g, i) =>
+      g match {
+        case BatchNorm =>
+          val shape = dimensions.slice(i, i + 1)
+          BatchNormConfig(shape)
+        case Dropout =>
+          DropoutConfig()
+        case Linear =>
+          val shape = dimensions.slice(i, i + 1)
+          LinearConfig(shape, regularization, op)
+        case Relu =>
+          ReluConfig
+        case Sigmoid =>
+          SigmoidConfig
+      }
+    }
+
+    val output  = OutputConfig(cost)
+
+    Network(configs :+ output)
   }
 
 }

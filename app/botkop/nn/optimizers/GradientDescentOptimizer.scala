@@ -3,8 +3,8 @@ package botkop.nn.optimizers
 import botkop.numsca.Tensor
 import play.api.libs.json.{Format, Json}
 
-case class GradientDescent(var learningRate: Double,
-                           learningRateDecay: Double = 0.95)
+case class GradientDescentOptimizer(var learningRate: Double,
+                                    learningRateDecay: Double = 0.95)
     extends Optimizer {
 
   override def update(parameters: List[Tensor], gradients: List[Tensor]): Unit =
@@ -20,6 +20,6 @@ case class GradientDescent(var learningRate: Double,
     learningRate *= learningRateDecay
 }
 
-object GradientDescent {
-  implicit val f: Format[GradientDescent] = Json.format
+object GradientDescentOptimizer {
+  implicit val f: Format[GradientDescentOptimizer] = Json.format
 }

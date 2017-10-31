@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import botkop.numsca
 import botkop.numsca.Tensor
 
@@ -42,4 +42,10 @@ object SigmoidGate {
   def props(next: ActorRef) = Props(new SigmoidGate(next))
 }
 
-case object SigmoidConfig extends GateConfig
+case object SigmoidConfig extends GateConfig {
+  override def materialize(next: Option[ActorRef], index: Int)(
+      implicit system: ActorSystem,
+      projectName: String): ActorRef = {
+    system.actorOf(SigmoidGate.props(next.get), Sigmoid.name(index))
+  }
+}

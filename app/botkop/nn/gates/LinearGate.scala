@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorLogging, ActorRef, Props}
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.persistence._
@@ -11,13 +11,6 @@ import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
-/*
-class LinearGate(next: ActorRef,
-                 shape: Array[Int],
-                 regularization: Double,
-                 var optimizer: Optimizer,
-                 seed: Long = 231)
- */
 class LinearGate(next: ActorRef, config: LinearConfig)
     extends PersistentActor
     with ActorLogging {
@@ -101,16 +94,6 @@ class LinearGate(next: ActorRef, config: LinearConfig)
 
 }
 
-/*
-object LinearGate {
-  def props(next: ActorRef,
-            shape: Array[Int],
-            regularization: Double,
-            optimizer: Optimizer) =
-    Props(new LinearGate(next, shape, regularization, optimizer))
-}
- */
-
 object LinearGate {
   def props(next: ActorRef, config: LinearConfig) =
     Props(new LinearGate(next, config))
@@ -122,7 +105,14 @@ case class LinearConfig(shape: List[Int],
                         regularization: Double,
                         var optimizer: Optimizer,
                         seed: Long = 231L)
-    extends GateConfig
+    extends GateConfig {
+  override def materialize(next: Option[ActorRef], index: Int)(
+      implicit system: ActorSystem,
+      projectName: String): ActorRef = {
+    system.actorOf(LinearGate.props(next.get, this), Linear.name(index))
+  }
+}
+
 object LinearConfig {
   implicit val f: Format[LinearConfig] = Json.format
 }

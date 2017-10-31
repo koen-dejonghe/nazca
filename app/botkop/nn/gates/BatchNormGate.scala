@@ -137,12 +137,12 @@ case class BatchNormConfig(shape: List[Int],
                            momentum: Float = 0.9f)
     extends GateConfig {
 
-  def materialize(next: ActorRef, name: String)(
-      implicit system: ActorSystem): ActorRef = {
+  def materialize(next: Option[ActorRef], index: Int)(
+      implicit system: ActorSystem, projectName: String): ActorRef = {
     val props = BatchNormGate
-      .props(next, this)
+      .props(next.get, this)
       .withDispatcher("gate-dispatcher")
-    system.actorOf(props, name)
+    system.actorOf(props, BatchNorm.name(index))
   }
 
 }

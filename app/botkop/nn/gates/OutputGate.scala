@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import botkop.nn.costs.Cost
@@ -55,8 +55,13 @@ object OutputGate {
   def props(config: OutputConfig) = Props(new OutputGate(config: OutputConfig))
 }
 
-case class OutputConfig(cost: Cost) extends GateConfig
+case class OutputConfig(cost: Cost) extends GateConfig {
+  override def materialize(next: Option[ActorRef], index: Int)(
+      implicit system: ActorSystem,
+      projectName: String): ActorRef = {
+    system.actorOf(OutputGate.props(this), Output.name(index))
+  }
+}
 object OutputConfig {
   implicit val f: Format[OutputConfig] = Json.format
 }
-

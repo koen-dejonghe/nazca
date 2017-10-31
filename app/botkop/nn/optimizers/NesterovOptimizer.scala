@@ -7,9 +7,9 @@ import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
-case class Nesterov(var learningRate: Double,
-                    learningRateDecay: Double = 0.95,
-                    beta: Double = 0.9)
+case class NesterovOptimizer(var learningRate: Double,
+                             learningRateDecay: Double = 0.95,
+                             beta: Double = 0.9)
     extends Optimizer
     with LazyLogging {
 
@@ -43,7 +43,7 @@ case class Nesterov(var learningRate: Double,
   }
 }
 
-object Nesterov {
-  implicit val f: Format[Nesterov] = Json.format
+object NesterovOptimizer {
+  implicit val f: Format[NesterovOptimizer] = Json.format
 }
 

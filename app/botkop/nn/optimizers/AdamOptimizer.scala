@@ -7,11 +7,11 @@ import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
 
-case class Adam(var learningRate: Double,
-                beta1: Double = 0.9,
-                beta2: Double = 0.999,
-                epsilon: Double = 1e-8,
-                learningRateDecay: Double = 0.95)
+case class AdamOptimizer(var learningRate: Double,
+                         beta1: Double = 0.9,
+                         beta2: Double = 0.999,
+                         epsilon: Double = 1e-8,
+                         learningRateDecay: Double = 0.95)
     extends Optimizer
     with LazyLogging {
 
@@ -60,6 +60,6 @@ case class Adam(var learningRate: Double,
   }
 }
 
-object Adam {
-  implicit val f: Format[Adam] = Json.format
+object AdamOptimizer {
+  implicit val f: Format[AdamOptimizer] = Json.format
 }

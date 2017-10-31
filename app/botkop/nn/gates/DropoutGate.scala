@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import botkop.numsca
 import botkop.numsca.Tensor
 import play.api.libs.json.{Format, Json}
@@ -44,7 +44,13 @@ object DropoutGate {
     Props(new DropoutGate(next, config))
 }
 
-case class DropoutConfig(p: Double = 0.5) extends GateConfig
+case class DropoutConfig(p: Double = 0.5) extends GateConfig {
+  override def materialize(next: Option[ActorRef], index: Int)(
+      implicit system: ActorSystem,
+      projectName: String): ActorRef = {
+    system.actorOf(DropoutGate.props(next.get, this), Dropout.name(index))
+  }
+}
 object DropoutConfig {
   implicit val f: Format[DropoutConfig] = Json.format
 }

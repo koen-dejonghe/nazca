@@ -27,13 +27,13 @@ object Optimizer {
     def from(name: String, data: JsObject): JsResult[Optimizer] =
       name match {
         case "Adam" =>
-          Json.fromJson[Adam](data)
+          Json.fromJson[AdamOptimizer](data)
         case "GradientDescent" =>
-          Json.fromJson[GradientDescent](data)
+          Json.fromJson[GradientDescentOptimizer](data)
         case "Momentum" =>
-          Json.fromJson[Momentum](data)
+          Json.fromJson[MomentumOptimizer](data)
         case "Nesterov" =>
-          Json.fromJson[Nesterov](data)
+          Json.fromJson[NesterovOptimizer](data)
         case _ => JsError(s"Unknown class '$name'")
       }
 
@@ -46,14 +46,14 @@ object Optimizer {
 
   def writes(foo: Optimizer): JsValue = {
     val (prod: Product, sub) = foo match {
-      case b: Adam =>
-        (b, Json.toJson(b)(Adam.f))
-      case b: GradientDescent =>
-        (b, Json.toJson(b)(GradientDescent.f))
-      case b: Momentum =>
-        (b, Json.toJson(b)(Momentum.f))
-      case b: Nesterov =>
-        (b, Json.toJson(b)(Nesterov.f))
+      case b: AdamOptimizer =>
+        (b, Json.toJson(b)(AdamOptimizer.f))
+      case b: GradientDescentOptimizer =>
+        (b, Json.toJson(b)(GradientDescentOptimizer.f))
+      case b: MomentumOptimizer =>
+        (b, Json.toJson(b)(MomentumOptimizer.f))
+      case b: NesterovOptimizer =>
+        (b, Json.toJson(b)(NesterovOptimizer.f))
     }
     JsObject(Seq("class" -> JsString(prod.productPrefix), "data" -> sub))
   }

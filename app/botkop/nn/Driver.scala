@@ -7,7 +7,7 @@ import botkop.nn.costs._
 import botkop.nn.data.loaders.Cifar10DataLoader
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
-import botkop.nn.optimizers.{Adam, AdamOptimizer}
+import botkop.nn.optimizers.Adam
 
 import scala.language.postfixOps
 
@@ -58,16 +58,16 @@ class Driver extends Actor with Timers with ActorLogging {
       val nn = template.build
 
       val miniBatcher =
-        system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate.get))
+        system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate))
       miniBatcher ! NextBatch
 
       val devEvaluator: ActorRef =
         system.actorOf(
-          Evaluator.props("dev-eval", devEvalDataLoader, nn.entryGate.get))
+          Evaluator.props("dev-eval", devEvalDataLoader, nn.entryGate))
 
       val trainEvaluator: ActorRef =
         system.actorOf(
-          Evaluator.props("train-eval", trainEvalDataLoader, nn.entryGate.get))
+          Evaluator.props("train-eval", trainEvalDataLoader, nn.entryGate))
 
       context become running(nn, miniBatcher)
   }

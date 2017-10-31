@@ -1,83 +1,31 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorRef, ActorSystem}
-import botkop.nn.costs.{Cost, CrossEntropy}
-import botkop.nn.optimizers._
+import akka.actor.{ActorRef, ActorSystem, PoisonPill}
+import play.api.libs.json.{Format, Json}
 
-case class Network(config: List[GateConfig]) {
+case class Network(projectName: String, gates: List[ActorRef]) {
+  val entryGate: ActorRef = gates.head
+  def quit(): Unit = gates.foreach(_ ! PoisonPill)
+}
+
+case class NetworkConfig(configs: List[GateConfig]) {
   def materialize(implicit system: ActorSystem,
-                  projectName: String): List[ActorRef] =
-    config.zipWithIndex.reverse.foldLeft(List.empty[ActorRef]) {
-      case (gs, (cfg, index)) =>
-        if (gs.isEmpty)
-          cfg.materialize(None, index) :: gs
-        else
-          cfg.materialize(Some(gs.head), index) :: gs
-    }
-}
-
-case class NetworkBuilder(gates: List[GateStub] = List.empty,
-                          dimensions: List[Int] = List.empty,
-                          cost: Cost = CrossEntropy,
-                          optimizer: OptimizerStub = GradientDescent,
-                          learningRate: Double = 0.001,
-                          learningRateDecay: Double = 0.95,
-                          regularization: Double = 0.0) {
-
-  def +(other: NetworkBuilder) = NetworkBuilder(this.gates ++ other.gates)
-  def +(layer: GateStub) = NetworkBuilder(this.gates :+ layer)
-  def *(i: Int): NetworkBuilder =
-    NetworkBuilder(List.tabulate(i)(_ => gates).flatten)
-
-  def withGates(gs: GateStub*): NetworkBuilder = copy(gates = gs.toList)
-  def withDimensions(dims: Int*): NetworkBuilder = copy(dimensions = dims.toList)
-  def withCostFunction(cf: Cost): NetworkBuilder = copy(cost = cf)
-  def withOptimizer(o: OptimizerStub): NetworkBuilder = copy(optimizer = o)
-  def withLearningRate(d: Double): NetworkBuilder = copy(learningRate = d)
-  def withLearningRateDecay(d: Double): NetworkBuilder = copy(learningRateDecay = d)
-  def withRegularization(reg: Double): NetworkBuilder = copy(regularization = reg)
-
-  def build(implicit system: ActorSystem, projectName: String): Network = {
-    require(gates.nonEmpty)
-    require(dimensions.nonEmpty)
-    val numLinearGates = gates.count(g => g == Linear)
-    require(numLinearGates == dimensions.length - 1)
-
-    val op = optimizer match {
-      case Adam =>
-        AdamOptimizer(learningRate, learningRateDecay)
-      case GradientDescent =>
-        GradientDescentOptimizer(learningRate, learningRateDecay)
-      case Momentum =>
-        MomentumOptimizer(learningRate, learningRateDecay)
-      case Nesterov =>
-        NesterovOptimizer(learningRate, learningRateDecay)
-    }
-
-    val configs = gates.zipWithIndex.map { case (g, i) =>
-      g match {
-        case BatchNorm =>
-          val shape = dimensions.slice(i, i + 1)
-          BatchNormConfig(shape)
-        case Dropout =>
-          DropoutConfig()
-        case Linear =>
-          val shape = dimensions.slice(i, i + 1)
-          LinearConfig(shape, regularization, op)
-        case Relu =>
-          ReluConfig
-        case Sigmoid =>
-          SigmoidConfig
+                  projectName: String): Network = {
+    val gates: List[ActorRef] =
+      configs.zipWithIndex.reverse.foldLeft(List.empty[ActorRef]) {
+        case (gs, (cfg, index)) =>
+          if (gs.isEmpty)
+            cfg.materialize(None, index) :: gs
+          else
+            cfg.materialize(Some(gs.head), index) :: gs
       }
-    }
-
-    val output  = OutputConfig(cost)
-
-    Network(configs :+ output)
+    Network(projectName, gates)
   }
-
 }
 
+object NetworkConfig {
+  implicit val f: Format[NetworkConfig] = Json.format
+}
 /*
 case class Network(
     gates: List[GateStub] = List.empty,

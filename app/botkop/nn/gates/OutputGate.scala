@@ -50,8 +50,6 @@ class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
 }
 
 object OutputGate {
-  // def props(costFunction: (Tensor, Tensor) => (Double, Tensor)) =
-  // Props(new OutputGate(costFunction))
   def props(config: OutputConfig) = Props(new OutputGate(config: OutputConfig))
 }
 

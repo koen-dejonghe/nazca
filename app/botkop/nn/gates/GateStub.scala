@@ -1,5 +1,7 @@
 package botkop.nn.gates
 
+import botkop.nn.network.NetworkBuilder
+
 sealed trait GateStub {
   def +(other: GateStub): NetworkBuilder = NetworkBuilder(List(this, other))
   def *(i: Int): NetworkBuilder = NetworkBuilder(List.fill(i)(this))

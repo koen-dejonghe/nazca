@@ -4,10 +4,11 @@ import akka.actor._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import botkop.nn.costs._
-import botkop.nn.data.loaders.{Cifar10DataLoader, MnistDataLoader}
-import botkop.nn.data.{Evaluator, MiniBatcher}
+import botkop.nn.data.loaders._
+import botkop.nn.data._
 import botkop.nn.gates._
-import botkop.nn.optimizers.{Adam, GradientDescent, Momentum, Nesterov}
+import botkop.nn.network._
+import botkop.nn.optimizers._
 import play.api.libs.json.Json
 
 import scala.language.postfixOps

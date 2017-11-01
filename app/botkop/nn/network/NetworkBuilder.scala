@@ -1,7 +1,8 @@
-package botkop.nn.gates
+package botkop.nn.network
 
 import akka.actor.ActorSystem
 import botkop.nn.costs.{Cost, CrossEntropy}
+import botkop.nn.gates._
 import botkop.nn.optimizers._
 
 import scala.language.postfixOps

@@ -1,6 +1,5 @@
 package botkop.nn
 
-import akka.actor.ActorSystem
 import botkop.numsca.Tensor
 import play.api.libs.json.{Json, OFormat}
 

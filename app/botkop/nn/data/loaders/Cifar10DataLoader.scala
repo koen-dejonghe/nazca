@@ -29,7 +29,7 @@ class Cifar10DataLoader(mode: String,
     .toList
 
   override val numSamples: Int = take match {
-    case Some(n) => math.max(n, files.length)
+    case Some(n) => math.min(n, files.length)
     case None => files.length
   }
 

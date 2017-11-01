@@ -26,35 +26,35 @@ class Driver extends Actor with Timers with ActorLogging {
   implicit val projectName: String = "cifar10LBR2"
 
   val template: NetworkBuilder = ((Linear + Relu) * 2)
-    // .withDimensions(784, 50, 10)
-    .withDimensions(32 * 32 * 3, 50, 10)
-    .withOptimizer(GradientDescent)
+    .withDimensions(784, 50, 10)
+    // .withDimensions(32 * 32 * 3, 50, 10)
+    .withOptimizer(Nesterov)
     .withCostFunction(Softmax)
     // .withRegularization(1e-3)
     .withLearningRate(0.3)
     .withLearningRateDecay(1.0)
 
-  println(Json.prettyPrint(Json.toJson(template.networkConfig)))
+  log.debug(Json.prettyPrint(Json.toJson(template.networkConfig)))
 
   val miniBatchSize = 64
 
-  val trainingDataLoader =
-  new Cifar10DataLoader(mode = "train", miniBatchSize)
-  val devEvalDataLoader =
-  new Cifar10DataLoader(mode = "dev", miniBatchSize)
-  val trainEvalDataLoader =
-  new Cifar10DataLoader(mode = "train",
-  miniBatchSize,
-  take = Some(devEvalDataLoader.numSamples))
-
   // val trainingDataLoader =
-    // new MnistDataLoader("data/mnist/mnist_train.csv.gz", miniBatchSize)
+  // new Cifar10DataLoader(mode = "train", miniBatchSize)
   // val devEvalDataLoader =
-    // new MnistDataLoader("data/mnist/mnist_test.csv.gz", miniBatchSize)
+  // new Cifar10DataLoader(mode = "dev", miniBatchSize)
   // val trainEvalDataLoader =
-    // new MnistDataLoader("data/mnist/mnist_train.csv.gz",
-                        // miniBatchSize,
-                        // take = Some(devEvalDataLoader.numSamples))
+  // new Cifar10DataLoader(mode = "train",
+  // miniBatchSize,
+  // take = Some(devEvalDataLoader.numSamples))
+
+  val trainingDataLoader =
+    new MnistDataLoader("data/mnist/mnist_train.csv.gz", miniBatchSize)
+  val devEvalDataLoader =
+    new MnistDataLoader("data/mnist/mnist_test.csv.gz", miniBatchSize)
+  val trainEvalDataLoader =
+    new MnistDataLoader("data/mnist/mnist_train.csv.gz",
+                        miniBatchSize,
+                        take = Some(devEvalDataLoader.numSamples))
 
   // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 

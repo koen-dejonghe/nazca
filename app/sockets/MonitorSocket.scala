@@ -1,4 +1,4 @@
-package actors.sockets
+package sockets
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub

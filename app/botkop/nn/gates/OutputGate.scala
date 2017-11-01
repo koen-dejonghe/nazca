@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorContext, ActorLogging, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import botkop.nn.costs.Cost
@@ -8,7 +8,6 @@ import botkop.numsca
 import botkop.numsca.Tensor
 import play.api.libs.json.{Format, Json}
 
-// class OutputGate(costFunction: (Tensor, Tensor) => (Double, Tensor))
 class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
 
   import config._
@@ -52,14 +51,13 @@ class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
 object OutputGate {
   def props(config: OutputConfig): Props =
     Props(new OutputGate(config: OutputConfig))
-      .withDispatcher("gate-dispatcher")
 }
 
 case class OutputConfig(cost: Cost) extends GateConfig {
   override def materialize(next: Option[ActorRef], index: Int)(
-      implicit system: ActorSystem,
+      implicit context: ActorContext,
       projectName: String): ActorRef = {
-    system.actorOf(OutputGate.props(this), Output.name(index))
+    context.actorOf(OutputGate.props(this), Output.name(index))
   }
 }
 object OutputConfig {

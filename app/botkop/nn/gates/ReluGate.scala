@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorContext, ActorLogging, ActorRef, Props}
 import botkop.numsca
 import botkop.numsca.Tensor
 
@@ -40,13 +40,12 @@ class ReluGate(next: ActorRef) extends Actor with ActorLogging {
 object ReluGate {
   def props(next: ActorRef): Props =
     Props(new ReluGate(next))
-      .withDispatcher("gate-dispatcher")
 }
 
 case object ReluConfig extends GateConfig {
   override def materialize(next: Option[ActorRef], index: Int)(
-      implicit system: ActorSystem,
+      implicit context: ActorContext,
       projectName: String): ActorRef = {
-    system.actorOf(ReluGate.props(next.get), Relu.name(index))
+    context.actorOf(ReluGate.props(next.get), Relu.name(index))
   }
 }

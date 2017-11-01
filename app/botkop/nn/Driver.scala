@@ -18,7 +18,7 @@ class Driver extends Actor with Timers with ActorLogging {
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
 
-  implicit val system: ActorSystem = context.system
+  // implicit val system: ActorSystem = context.system
 
   //
   // def optimizer = AdamOptimizer(learningRate = 0.001, learningRateDecay = 0.95)
@@ -67,15 +67,15 @@ class Driver extends Actor with Timers with ActorLogging {
       val nn = template.build
 
       val miniBatcher =
-        system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate))
+        context.system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate))
       miniBatcher ! NextBatch
 
       val devEvaluator: ActorRef =
-        system.actorOf(
+        context.actorOf(
           Evaluator.props("dev-eval", devEvalDataLoader, nn.entryGate))
 
       val trainEvaluator: ActorRef =
-        system.actorOf(
+        context.actorOf(
           Evaluator.props("train-eval", trainEvalDataLoader, nn.entryGate))
 
       context become running(nn, miniBatcher)

@@ -1,6 +1,6 @@
 package botkop.nn.network
 
-import akka.actor.ActorSystem
+import akka.actor.ActorContext
 import botkop.nn.costs.{Cost, CrossEntropy}
 import botkop.nn.gates._
 import botkop.nn.optimizers._
@@ -79,7 +79,7 @@ case class NetworkBuilder(gateStubs: List[GateStub] = List.empty,
     NetworkConfig(configs)
   }
 
-  def build(implicit system: ActorSystem, projectName: String): Network = {
+  def build(implicit context: ActorContext, projectName: String): Network = {
     networkConfig.materialize
   }
 

@@ -1,12 +1,12 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{ActorContext, ActorLogging, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import akka.persistence._
 import botkop.nn.optimizers.Optimizer
-import botkop.{numsca => ns}
 import botkop.numsca.Tensor
+import botkop.{numsca => ns}
 import play.api.libs.json.{Format, Json}
 
 import scala.language.postfixOps
@@ -25,6 +25,8 @@ class LinearGate(next: ActorRef, config: LinearConfig)
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
+
+  log.debug(self.path.toString)
 
   var w: Tensor = ns.randn(shape.toArray) * math.sqrt(2.0 / shape(1))
   var b: Tensor = ns.zeros(shape.head, 1)
@@ -97,7 +99,6 @@ class LinearGate(next: ActorRef, config: LinearConfig)
 object LinearGate {
   def props(next: ActorRef, config: LinearConfig): Props =
     Props(new LinearGate(next, config))
-      .withDispatcher("gate-dispatcher")
 }
 
 case class LinearState(w: Tensor, b: Tensor, optimizer: Optimizer)
@@ -108,9 +109,9 @@ case class LinearConfig(shape: List[Int],
                         seed: Long = 231L)
     extends GateConfig {
   override def materialize(next: Option[ActorRef], index: Int)(
-      implicit system: ActorSystem,
+      implicit context: ActorContext,
       projectName: String): ActorRef = {
-    system.actorOf(LinearGate.props(next.get, this), Linear.name(index))
+    context.actorOf(LinearGate.props(next.get, this), Linear.name(index))
   }
 }
 

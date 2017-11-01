@@ -2,13 +2,12 @@ package controllers
 
 import javax.inject._
 
-import actors.sockets.ControlSocket
-import actors.sockets.MonitorSocket
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
 import botkop.nn.Driver
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
+import sockets.{ControlSocket, MonitorSocket}
 
 @Singleton
 class NetController @Inject()(cc: ControllerComponents)(
@@ -16,7 +15,7 @@ class NetController @Inject()(cc: ControllerComponents)(
     mat: Materializer)
     extends AbstractController(cc) {
 
-  val monitor: ActorRef = system.actorOf(Driver.props())
+  val monitor: ActorRef = system.actorOf(Driver.props(), "driver")
 
   def index = Action {
     Ok(views.html.index())

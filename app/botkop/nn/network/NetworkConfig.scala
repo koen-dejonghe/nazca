@@ -1,11 +1,11 @@
 package botkop.nn.network
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorContext, ActorRef}
 import botkop.nn.gates.GateConfig
 import play.api.libs.json.{Format, Json}
 
 case class NetworkConfig(configs: List[GateConfig]) {
-  def materialize(implicit system: ActorSystem,
+  def materialize(implicit context: ActorContext,
                   projectName: String): Network = {
     val gates: List[ActorRef] =
       configs.zipWithIndex.reverse.foldLeft(List.empty[ActorRef]) {

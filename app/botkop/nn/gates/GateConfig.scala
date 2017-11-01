@@ -1,12 +1,13 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorContext, ActorRef, ActorSystem}
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json._
 
 trait GateConfig {
   def materialize(next: Option[ActorRef], index: Int)(
-      implicit system: ActorSystem, projectName: String): ActorRef
+      implicit context: ActorContext,
+      projectName: String): ActorRef
 }
 
 object GateConfig extends LazyLogging {

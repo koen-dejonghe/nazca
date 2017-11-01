@@ -41,7 +41,7 @@ class DropoutGate(next: ActorRef, config: DropoutConfig)
 
 object DropoutGate {
   def props(next: ActorRef, config: DropoutConfig): Props =
-    Props(new DropoutGate(next, config))
+    Props(new DropoutGate(next, config)).withDispatcher("gate-dispatcher")
 }
 
 case class DropoutConfig(p: Double = 0.5) extends GateConfig {

@@ -4,10 +4,11 @@ import akka.actor._
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import botkop.nn.costs._
-import botkop.nn.data.loaders.Cifar10DataLoader
+import botkop.nn.data.loaders.{Cifar10DataLoader, MnistDataLoader}
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
-import botkop.nn.optimizers.Adam
+import botkop.nn.optimizers.{Adam, GradientDescent, Momentum, Nesterov}
+import play.api.libs.json.Json
 
 import scala.language.postfixOps
 
@@ -24,29 +25,36 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val projectName: String = "cifar10LBR2"
 
-  val template: NetworkBuilder = ((Linear + BatchNorm + Relu) * 2)
-  // .withDimensions(784, 50, 10)
+  val template: NetworkBuilder = ((Linear + Relu) * 2)
+    // .withDimensions(784, 50, 10)
     .withDimensions(32 * 32 * 3, 50, 10)
-    .withOptimizer(Adam)
+    .withOptimizer(GradientDescent)
     .withCostFunction(Softmax)
-    .withRegularization(1e-5)
+    // .withRegularization(1e-3)
+    .withLearningRate(0.3)
+    .withLearningRateDecay(1.0)
+
+  println(Json.prettyPrint(Json.toJson(template.networkConfig)))
 
   val miniBatchSize = 64
+
   val trainingDataLoader =
-    new Cifar10DataLoader(mode = "train", miniBatchSize)
+  new Cifar10DataLoader(mode = "train", miniBatchSize)
   val devEvalDataLoader =
-    new Cifar10DataLoader(mode = "dev", miniBatchSize)
+  new Cifar10DataLoader(mode = "dev", miniBatchSize)
   val trainEvalDataLoader =
-    new Cifar10DataLoader(mode = "train",
-                          miniBatchSize,
-                          take = Some(devEvalDataLoader.numSamples))
+  new Cifar10DataLoader(mode = "train",
+  miniBatchSize,
+  take = Some(devEvalDataLoader.numSamples))
 
   // val trainingDataLoader =
-  // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 16)
+    // new MnistDataLoader("data/mnist/mnist_train.csv.gz", miniBatchSize)
   // val devEvalDataLoader =
-  // new MnistDataLoader("data/mnist/mnist_test.csv.gz", 256)
+    // new MnistDataLoader("data/mnist/mnist_test.csv.gz", miniBatchSize)
   // val trainEvalDataLoader =
-  // new MnistDataLoader("data/mnist/mnist_train.csv.gz", 256, take = Some(2048))
+    // new MnistDataLoader("data/mnist/mnist_train.csv.gz",
+                        // miniBatchSize,
+                        // take = Some(devEvalDataLoader.numSamples))
 
   // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 

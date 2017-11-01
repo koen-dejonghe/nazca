@@ -1,8 +1,11 @@
 package botkop.nn.gates
 
 import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestActors, TestKit}
+import akka.testkit.{ImplicitSender, TestKit}
+import botkop.nn.costs.Softmax
+import botkop.nn.optimizers.Nesterov
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import play.api.libs.json.Json
 
@@ -12,23 +15,32 @@ class NetworkSpec
     with ImplicitSender
     with WordSpecLike
     with Matchers
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with LazyLogging {
 
   override def afterAll {
     TestKit.shutdownActorSystem(system)
   }
 
-  "A network" must {
-    "write json" in {
+  "A network builder" must {
+    "write and read json" in {
 
-      implicit val projectName: String = "test"
+      val t1 = ((Linear + BatchNorm + Relu + Dropout) * 2 + Linear)
+        .withDimensions(32 * 32 * 3, 100, 50, 10)
+        .withOptimizer(Nesterov)
+        .withCostFunction(Softmax)
+        .withRegularization(1e-3)
+        .withLearningRate(0.8)
+        .networkConfig
 
-      val template: Network = ((Linear + BatchNorm + Relu) * 2)
-        .withDimensions(32 * 32 * 3, 50, 10)
+      val json = Json.prettyPrint(Json.toJson(t1))
+      logger.info(json)
 
-      println(Json.prettyPrint(Json.toJson(template)))
+      val t2 = Json.fromJson[NetworkConfig](Json.parse(json)).get
 
+      assert(t2 == t1)
     }
+
   }
 }
 

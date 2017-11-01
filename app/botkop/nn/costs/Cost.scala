@@ -1,13 +1,14 @@
 package botkop.nn.costs
 
 import botkop.numsca.Tensor
+import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json._
 
 trait Cost {
   def costFunction(x: Tensor, y: Tensor): (Double, Tensor)
 }
 
-object Cost {
+object Cost extends LazyLogging {
   def reads(json: JsValue): JsResult[Cost] = {
 
     def from(name: String): JsResult[Cost] =
@@ -16,7 +17,9 @@ object Cost {
           JsSuccess(CrossEntropy)
         case "Softmax" =>
           JsSuccess(Softmax)
-        case _ => JsError(s"Unknown class '$name'")
+        case _ =>
+          logger.error(s"unknown class $name")
+          JsError(s"Unknown class '$name'")
       }
 
     for {

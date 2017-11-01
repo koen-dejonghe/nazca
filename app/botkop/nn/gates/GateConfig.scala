@@ -1,6 +1,7 @@
 package botkop.nn.gates
 
 import akka.actor.{ActorRef, ActorSystem}
+import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json._
 
 trait GateConfig {
@@ -8,7 +9,7 @@ trait GateConfig {
       implicit system: ActorSystem, projectName: String): ActorRef
 }
 
-object GateConfig {
+object GateConfig extends LazyLogging {
   def reads(json: JsValue): JsResult[GateConfig] = {
 
     def from(name: String, data: Option[JsObject]): JsResult[GateConfig] =
@@ -25,7 +26,9 @@ object GateConfig {
           JsSuccess(ReluConfig)
         case "SigmoidConfig" =>
           JsSuccess(SigmoidConfig)
-        case _ => JsError(s"Unknown class '$name'")
+        case _ =>
+          logger.error(s"unknown class $name")
+          JsError(s"Unknown class '$name'")
       }
 
     for {

@@ -50,7 +50,9 @@ class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
 }
 
 object OutputGate {
-  def props(config: OutputConfig) = Props(new OutputGate(config: OutputConfig))
+  def props(config: OutputConfig): Props =
+    Props(new OutputGate(config: OutputConfig))
+      .withDispatcher("gate-dispatcher")
 }
 
 case class OutputConfig(cost: Cost) extends GateConfig {

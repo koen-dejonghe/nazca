@@ -95,8 +95,9 @@ class LinearGate(next: ActorRef, config: LinearConfig)
 }
 
 object LinearGate {
-  def props(next: ActorRef, config: LinearConfig) =
+  def props(next: ActorRef, config: LinearConfig): Props =
     Props(new LinearGate(next, config))
+      .withDispatcher("gate-dispatcher")
 }
 
 case class LinearState(w: Tensor, b: Tensor, optimizer: Optimizer)

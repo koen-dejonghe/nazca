@@ -3,7 +3,9 @@ package botkop.nn.gates
 import akka.actor.{ActorRef, ActorSystem, PoisonPill}
 import play.api.libs.json.{Format, Json}
 
-case class Network(projectName: String, gates: List[ActorRef]) {
+case class Network(projectName: String,
+                   gates: List[ActorRef],
+                   config: NetworkConfig) {
   val entryGate: ActorRef = gates.head
   def quit(): Unit = gates.foreach(_ ! PoisonPill)
 }
@@ -19,7 +21,7 @@ case class NetworkConfig(configs: List[GateConfig]) {
           else
             cfg.materialize(Some(gs.head), index) :: gs
       }
-    Network(projectName, gates)
+    Network(projectName, gates, this)
   }
 }
 

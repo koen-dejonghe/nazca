@@ -121,8 +121,8 @@ class BatchNormGate(next: ActorRef, config: BatchNormConfig)
 }
 
 object BatchNormGate {
-  def props(next: ActorRef, config: BatchNormConfig) =
-    Props(new BatchNormGate(next, config))
+  def props(next: ActorRef, config: BatchNormConfig): Props =
+    Props(new BatchNormGate(next, config)).withDispatcher("gate-dispatcher")
 }
 
 case class BatchNormState(runningMean: Tensor,
@@ -141,11 +141,10 @@ case class BatchNormConfig(shape: List[Int],
       implicit system: ActorSystem, projectName: String): ActorRef = {
     val props = BatchNormGate
       .props(next.get, this)
-      .withDispatcher("gate-dispatcher")
     system.actorOf(props, BatchNorm.name(index))
   }
-
 }
+
 object BatchNormConfig {
   implicit val f: Format[BatchNormConfig] = Json.format
 }

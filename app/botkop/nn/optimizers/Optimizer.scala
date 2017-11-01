@@ -1,6 +1,7 @@
 package botkop.nn.optimizers
 
 import botkop.numsca.Tensor
+import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json._
 
 trait Optimizer extends Serializable {
@@ -21,20 +22,22 @@ trait Optimizer extends Serializable {
 /**
   * json boilerplate
   */
-object Optimizer {
+object Optimizer extends LazyLogging {
   def reads(json: JsValue): JsResult[Optimizer] = {
 
     def from(name: String, data: JsObject): JsResult[Optimizer] =
       name match {
-        case "Adam" =>
+        case "AdamOptimizer" =>
           Json.fromJson[AdamOptimizer](data)
-        case "GradientDescent" =>
+        case "GradientDescentOptimizer" =>
           Json.fromJson[GradientDescentOptimizer](data)
-        case "Momentum" =>
+        case "MomentumOptimizer" =>
           Json.fromJson[MomentumOptimizer](data)
-        case "Nesterov" =>
+        case "NesterovOptimizer" =>
           Json.fromJson[NesterovOptimizer](data)
-        case _ => JsError(s"Unknown class '$name'")
+        case _ =>
+          logger.error(s"unknown class $name")
+          JsError(s"Unknown class '$name'")
       }
 
     for {
@@ -54,6 +57,8 @@ object Optimizer {
         (b, Json.toJson(b)(MomentumOptimizer.f))
       case b: NesterovOptimizer =>
         (b, Json.toJson(b)(NesterovOptimizer.f))
+      case c =>
+        throw new IllegalArgumentException(s"unknown class ${c.getClass}")
     }
     JsObject(Seq("class" -> JsString(prod.productPrefix), "data" -> sub))
   }

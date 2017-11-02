@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import botkop.nn.Driver
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
-import sockets.{ControlSocket, MonitorSocket}
+import sockets.{CanvasSocket, ControlSocket, MonitorSocket}
 
 @Singleton
 class NetController @Inject()(cc: ControllerComponents)(
@@ -21,15 +21,22 @@ class NetController @Inject()(cc: ControllerComponents)(
     Ok(views.html.index())
   }
 
-  def controlSocket: WebSocket = WebSocket.accept[String, String] { request =>
+  def controlSocket: WebSocket = WebSocket.accept[String, String] { _ =>
     ActorFlow.actorRef { out =>
       ControlSocket.props(out)
     }
   }
 
-  def monitorSocket: WebSocket = WebSocket.accept[String, String] { request =>
+  def monitorSocket: WebSocket = WebSocket.accept[String, String] { _ =>
     ActorFlow.actorRef { out =>
       MonitorSocket.props(out)
     }
   }
+
+  def canvasSocket: WebSocket = WebSocket.accept[String, String] { _ =>
+    ActorFlow.actorRef { out =>
+      CanvasSocket.props(out)
+    }
+  }
+
 }

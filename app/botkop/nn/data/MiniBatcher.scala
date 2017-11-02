@@ -48,5 +48,5 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
 object MiniBatcher {
   def props(dataLoader: DataLoader, entryGate: ActorRef): Props =
     Props(new MiniBatcher(dataLoader, entryGate))
-      .withDispatcher("deser-dispatcher")
+      .withDispatcher("serde-dispatcher")
 }

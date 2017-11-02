@@ -56,6 +56,9 @@ class Evaluator(source: String, dataLoader: DataLoader, entryGate: ActorRef)
 }
 
 object Evaluator {
-  def props(source: String, dataLoader: DataLoader, entryGate: ActorRef) =
+  def props(source: String,
+            dataLoader: DataLoader,
+            entryGate: ActorRef): Props =
     Props(new Evaluator(source, dataLoader, entryGate))
+      .withDispatcher("serde-dispatcher")
 }

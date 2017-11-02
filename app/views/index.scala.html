@@ -8,23 +8,26 @@
 
         <script src='@routes.Assets.versioned("jquery-1.12.4.min.js")'></script>
         <script src='@routes.Assets.versioned("bootstrap-3.3.7-dist/js/bootstrap.min.js")'></script>
-        <script src='@routes.Assets.versioned("bootstrap-toggle-master/js/bootstrap-toggle.min.js")'></script>
-        <script src='@routes.Assets.versioned("d3.v4.js")'></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.bundle.js"></script>
 
         <style>
             table {
                 font-family: monospace;
             }
+            textarea {
+                font-family:monospace;
+            }
         </style>
 
     </head>
     <body>
         <ul class="nav nav-tabs">
-            <li class="active"><a data-toggle="tab" href="#main-tab">Main</a></li>
+            <li><a data-toggle="tab" href="#canvas-tab">Canvas</a></li>
+            <li class="active"><a data-toggle="tab" href="#monitor-tab">Monitor</a></li>
         </ul>
         <div class="tab-content">
-            @mainTab()
+            @canvasTab()
+            @monitorTab()
         </div>
     </body>
 

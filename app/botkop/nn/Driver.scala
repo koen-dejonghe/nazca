@@ -11,6 +11,8 @@ import botkop.nn.network._
 import botkop.nn.optimizers._
 import play.api.libs.json.Json
 
+import scala.concurrent.duration._
+
 import scala.language.postfixOps
 
 class Driver extends Actor with Timers with ActorLogging {
@@ -26,16 +28,17 @@ class Driver extends Actor with Timers with ActorLogging {
 
   implicit val projectName: String = "cifar10LBR2"
 
-  val template: NetworkBuilder = ((Linear + Relu) * 2)
+  val template = ((Linear + Relu) * 2)
     .withDimensions(784, 50, 10)
     // .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(Nesterov)
     .withCostFunction(Softmax)
-    // .withRegularization(1e-3)
-    .withLearningRate(0.3)
-    .withLearningRateDecay(1.0)
+    .withRegularization(1e-8)
+    .withLearningRate(0.4)
+    .withLearningRateDecay(0.99)
+    .networkConfig
 
-  log.debug(Json.prettyPrint(Json.toJson(template.networkConfig)))
+  // log.debug(Json.prettyPrint(Json.toJson(template.networkConfig)))
 
   val miniBatchSize = 64
 
@@ -57,17 +60,28 @@ class Driver extends Actor with Timers with ActorLogging {
                         miniBatchSize,
                         take = Some(devEvalDataLoader.numSamples))
 
-  // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
+  timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
-  override def receive: Receive = empty
+  override def receive: Receive = empty(template)
 
-  def empty: Receive = {
+  def empty(template: NetworkConfig): Receive = {
+    case CanvasMessage("driver", "ready") =>
+      mediator ! Publish(
+        "control",
+        CanvasMessage("socket", Json.prettyPrint(Json.toJson(template))))
+
+    case CanvasMessage("driver", msg) =>
+      log.debug("deploying new network")
+      val nc = Json.fromJson[NetworkConfig](Json.parse(msg)).get
+      context become empty(nc)
+
     case Start =>
       log.debug("starting...")
-      val nn = template.build
+      val nn = template.materialize
 
       val miniBatcher =
-        context.system.actorOf(MiniBatcher.props(trainingDataLoader, nn.entryGate))
+        context.system.actorOf(
+          MiniBatcher.props(trainingDataLoader, nn.entryGate))
       miniBatcher ! NextBatch
 
       val devEvaluator: ActorRef =
@@ -88,7 +102,7 @@ class Driver extends Actor with Timers with ActorLogging {
     case Quit =>
       log.info("quitting")
       nn.quit()
-      context become empty
+      context become empty(nn.config)
   }
 
   def running(nn: Network, miniBatcher: ActorRef): Receive = {
@@ -98,7 +112,7 @@ class Driver extends Actor with Timers with ActorLogging {
     case Quit =>
       log.info("quitting")
       nn.quit()
-      context become empty
+      context become empty(nn.config)
     case Backward(_) =>
       miniBatcher ! NextBatch
     case PersistTick =>

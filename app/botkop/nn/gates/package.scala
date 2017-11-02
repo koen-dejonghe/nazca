@@ -42,4 +42,6 @@ package object gates {
   }
 
   case class SetLearningRate(lr: Double)
+
+  case class CanvasMessage(target: String, message: String)
 }

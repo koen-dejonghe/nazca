@@ -30,7 +30,7 @@
   <logger name="filters" level="DEBUG" />
   <logger name="services" level="DEBUG" />
   <logger name="views" level="DEBUG" />
-  <logger name="actors" level="DEBUG" />
+  <logger name="sockets" level="DEBUG" />
 
   <logger name="akka" level="INFO" />
 

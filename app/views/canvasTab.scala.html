@@ -1,0 +1,57 @@
+<div id="canvas-tab" class="tab-pane fade container-fluid">
+    <br/>
+    <div class="row content">
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-10">
+            <div class="form-group">
+                <label for="nn-json">Json:</label>
+                <textarea class="form-control" rows="20" id="nn-json"></textarea>
+            </div>
+            <button id="canvas-deploy-button" type="button" class="btn btn-primary">Deploy</button>
+        </div>
+    </div>
+</div>
+
+<script>
+$(function () {
+    var canvasSocket;
+
+    var canvasSocketOnOpen = function () {
+        console.log("canvas websocket opened");
+    };
+
+    var canvasSocketOnClose = function () {
+        console.log('canvas websocket disconnected');
+        setCanvasSocket()
+    };
+
+    var canvasSocketOnMessage = function (msg) {
+        // dispatcher(JSON.parse(msg.data));
+        dispatcher(msg.data);
+    };
+
+    function setCanvasSocket() {
+        var thisUrl = window.location.href;
+        var wsUrl = thisUrl.replace("http", "ws") + (thisUrl.endsWith("/") ? "" : "/") + "net-canvas";
+        canvasSocket = new WebSocket(wsUrl);
+        canvasSocket.onopen = canvasSocketOnOpen;
+        canvasSocket.onclose = canvasSocketOnClose;
+        canvasSocket.onmessage = canvasSocketOnMessage;
+    }
+
+    setCanvasSocket();
+
+    function dispatcher(msg) {
+        console.log(msg)
+        $('#nn-json').val(msg);
+    }
+
+    $("#canvas-deploy-button").click(function () {
+        var json = $('#nn-json').val();
+        canvasSocket.send(json)
+    });
+
+});
+</script>
+

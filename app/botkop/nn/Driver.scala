@@ -20,15 +20,10 @@ class Driver extends Actor with Timers with ActorLogging {
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
 
-  // implicit val system: ActorSystem = context.system
+  /*
+  implicit val projectName: String = "mnist"
 
-  //
-  // def optimizer = AdamOptimizer(learningRate = 0.001, learningRateDecay = 0.95)
-  // def optimizer = Nesterov(learningRate = 0.3, learningRateDecay = 0.99)
-
-  implicit val projectName: String = "cifar10LBR2"
-
-  val template = ((Linear + Relu) * 2)
+  val template: NetworkConfig = ((Linear + Relu) * 2)
     .withDimensions(784, 50, 10)
     // .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(Nesterov)
@@ -38,18 +33,7 @@ class Driver extends Actor with Timers with ActorLogging {
     .withLearningRateDecay(0.99)
     .networkConfig
 
-  // log.debug(Json.prettyPrint(Json.toJson(template.networkConfig)))
-
   val miniBatchSize = 64
-
-  // val trainingDataLoader =
-  // new Cifar10DataLoader(mode = "train", miniBatchSize)
-  // val devEvalDataLoader =
-  // new Cifar10DataLoader(mode = "dev", miniBatchSize)
-  // val trainEvalDataLoader =
-  // new Cifar10DataLoader(mode = "train",
-  // miniBatchSize,
-  // take = Some(devEvalDataLoader.numSamples))
 
   val trainingDataLoader =
     new MnistDataLoader("data/mnist/mnist_train.csv.gz", miniBatchSize)
@@ -57,23 +41,42 @@ class Driver extends Actor with Timers with ActorLogging {
     new MnistDataLoader("data/mnist/mnist_test.csv.gz", miniBatchSize)
   val trainEvalDataLoader =
     new MnistDataLoader("data/mnist/mnist_train.csv.gz",
-                        miniBatchSize,
-                        take = Some(devEvalDataLoader.numSamples))
+      miniBatchSize,
+      take = Some(devEvalDataLoader.numSamples))
+
+   */
+
+  implicit val projectName: String = "cifar10LBR2"
+  val template: NetworkConfig = ((Linear + Relu) * 2)
+    .withDimensions(32 * 32 * 3, 50, 10)
+    .withOptimizer(Nesterov)
+    .withCostFunction(Softmax)
+    .withRegularization(1e-4)
+    .withLearningRate(0.4)
+    .withLearningRateDecay(0.99)
+    .networkConfig
+
+  val miniBatchSize = 64
+
+  val trainingDataLoader =
+    new Cifar10DataLoader(mode = "train", miniBatchSize)
+  val devEvalDataLoader =
+    new Cifar10DataLoader(mode = "dev", miniBatchSize)
+  val trainEvalDataLoader =
+    new Cifar10DataLoader(mode = "train",
+                          miniBatchSize,
+                          take = Some(devEvalDataLoader.numSamples))
 
   timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
   override def receive: Receive = empty(template)
 
   def empty(template: NetworkConfig): Receive = {
+
     case CanvasMessage("driver", "ready") =>
       mediator ! Publish(
         "control",
         CanvasMessage("socket", Json.prettyPrint(Json.toJson(template))))
-
-    case CanvasMessage("driver", msg) =>
-      log.debug("deploying new network")
-      val nc = Json.fromJson[NetworkConfig](Json.parse(msg)).get
-      context become empty(nc)
 
     case Start =>
       log.debug("starting...")
@@ -99,24 +102,42 @@ class Driver extends Actor with Timers with ActorLogging {
     case Start =>
       miniBatcher ! NextBatch
       context become running(nn, miniBatcher)
+
     case Quit =>
       log.info("quitting")
       nn.quit()
       context become empty(nn.config)
+
+    case CanvasMessage("driver", "ready") =>
+      mediator ! Publish(
+        "control",
+        CanvasMessage("socket", Json.prettyPrint(Json.toJson(template))))
+
+    case CanvasMessage("driver", msg) =>
+      log.debug("deploying new network")
+      val nc = Json.fromJson[NetworkConfig](Json.parse(msg)).get
+      nn.quit()
+      context become empty(nc)
+
   }
 
   def running(nn: Network, miniBatcher: ActorRef): Receive = {
+
     case Pause =>
       log.info("pausing")
       context become paused(nn, miniBatcher)
+
     case Quit =>
       log.info("quitting")
       nn.quit()
       context become empty(nn.config)
+
     case Backward(_) =>
       miniBatcher ! NextBatch
+
     case PersistTick =>
       mediator ! Publish("control", Persist)
+
     case z =>
       log.error(
         s"don't know how to handle message of type ${z.getClass.getCanonicalName}")

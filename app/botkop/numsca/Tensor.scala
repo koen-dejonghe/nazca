@@ -154,6 +154,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   }
   */
 
+  /*
   def apply(ranges: NumscaRange*): Tensor = {
     val indexes = ranges.zipWithIndex.map {
       case (nr, i) =>
@@ -163,6 +164,26 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
           NDArrayIndex.interval(nr.from, shape(i))
         else
           NDArrayIndex.interval(nr.from, nr.to)
+    }
+    new Tensor(array.get(indexes: _*))
+  }
+
+  */
+
+  def apply(ranges: NumscaRange*): Tensor = {
+    val indexes = ranges.zipWithIndex.map {
+      case (nr, i) =>
+        nr.to match {
+          case None =>
+            if (nr.from == 0)
+              NDArrayIndex.all()
+            else
+              NDArrayIndex.interval(nr.from, shape(i))
+          case Some(n) if n < 0 =>
+            NDArrayIndex.interval(nr.from, shape(i) + n)
+          case Some(n) =>
+            NDArrayIndex.interval(nr.from, n)
+        }
     }
     new Tensor(array.get(indexes: _*))
   }

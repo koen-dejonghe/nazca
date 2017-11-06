@@ -153,7 +153,7 @@ object Cifar10DataLoader extends LazyLogging {
     val trainingFileList = getListOfFiles("data/cifar-10/train")
     val devFileList = getListOfFiles("data/cifar-10/test")
 
-    logger.debug("caculating mean image from training set")
+    logger.debug("calculating mean image from training set")
     // cannot use parallel collection for computing mean!
     val meanImage = computeMeanImage(trainingFileList.toList.map(_._2))
 

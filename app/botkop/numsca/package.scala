@@ -20,6 +20,7 @@ package object numsca {
     def /(t: Tensor): Tensor = numsca.power(t, -1) * d
   }
 
+  /*
   case class NumscaRange(from: Int, to: Int)
 
   def :> = NumscaRange(0, -1)
@@ -28,14 +29,17 @@ package object numsca {
     def :>(end: Int) = NumscaRange(i, end)
     def :> = NumscaRange(i, -1)
   }
+   */
 
-  /*
-  def :> : Range = 0 until -1
+  case class NumscaRange(from: Int, to: Option[Int])
 
-  implicit class NumscaRange(i: Int) {
-    def :>(end: Int): Range = i until end
+  def :>(end: Int) = NumscaRange(0, Some(end))
+  def :> = NumscaRange(0, None)
+
+  implicit class NumscaInt(i: Int) {
+    def :>(end: Int) = NumscaRange(i, Some(end))
+    def :> = NumscaRange(i, None)
   }
-  */
 
   def rand: rng.Random = Nd4j.getRandom
 
@@ -102,7 +106,8 @@ package object numsca {
   def floor(t: Tensor): Tensor = new Tensor(Transforms.floor(t.array))
 
   def mean(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.mean(t.array, axis))
-  def variance(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.`var`(t.array, axis))
+  def variance(t: Tensor, axis: Int): Tensor =
+    new Tensor(Nd4j.`var`(t.array, axis))
 
   def multiply(a: Tensor, b: Tensor): Tensor = a * b
   def dot(a: Tensor, b: Tensor): Tensor = a dot b
@@ -111,7 +116,5 @@ package object numsca {
     val a = Nd4j.pad(x.array, padWidth, mode)
     new Tensor(a)
   }
-
-
 
 }

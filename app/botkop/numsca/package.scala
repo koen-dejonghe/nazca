@@ -4,6 +4,7 @@ import org.nd4j.linalg.api.iter.NdIndexIterator
 import org.nd4j.linalg.api.ops.impl.indexaccum.IAMax
 import org.nd4j.linalg.api.rng
 import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.factory.Nd4j.PadMode
 import org.nd4j.linalg.ops.transforms.Transforms
 
 import scala.collection.JavaConverters._
@@ -19,11 +20,22 @@ package object numsca {
     def /(t: Tensor): Tensor = numsca.power(t, -1) * d
   }
 
+  case class NumscaRange(from: Int, to: Int)
+
+  def :> = NumscaRange(0, -1)
+
+  implicit class NumscaInt(i: Int) {
+    def :>(end: Int) = NumscaRange(i, end)
+    def :> = NumscaRange(i, -1)
+  }
+
+  /*
   def :> : Range = 0 until -1
 
   implicit class NumscaRange(i: Int) {
     def :>(end: Int): Range = i until end
   }
+  */
 
   def rand: rng.Random = Nd4j.getRandom
 
@@ -94,4 +106,12 @@ package object numsca {
 
   def multiply(a: Tensor, b: Tensor): Tensor = a * b
   def dot(a: Tensor, b: Tensor): Tensor = a dot b
+
+  def pad(x: Tensor, padWidth: Array[Array[Int]], mode: PadMode) = {
+    val a = Nd4j.pad(x.array, padWidth, mode)
+    new Tensor(a)
+  }
+
+
+
 }

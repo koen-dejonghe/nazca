@@ -3,6 +3,7 @@ package botkop.nn.gates
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
 import botkop.nn.costs.Softmax
+import botkop.nn.network.NetworkConfig
 import botkop.nn.optimizers.Nesterov
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging

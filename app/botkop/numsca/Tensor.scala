@@ -21,7 +21,8 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def transpose = new Tensor(array.transpose())
   def T: Tensor = transpose
 
-  def round: Tensor = Tensor(data.map(math.round(_).toDouble)).reshape(this.shape)
+  def round: Tensor =
+    Tensor(data.map(math.round(_).toDouble)).reshape(this.shape)
 
   def dot(other: Tensor) = new Tensor(array mmul other.array)
 
@@ -58,6 +59,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def %=(t: Tensor): Unit = array fmodi bc(t)
 
   def :=(t: Tensor): Unit = array assign t.array
+  def :=(d: Double): Unit = array assign d
 
   def >(other: Tensor): Tensor = new Tensor(array gt bc(other), true)
   def <(other: Tensor): Tensor = new Tensor(array lt bc(other), true)
@@ -82,8 +84,19 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     array.getDouble(0, 0)
   }
 
+  def slice(i: Int): Tensor = new Tensor(array.slice(i))
+  def slice(i: Int, dim: Int): Tensor = new Tensor(array.slice(i, dim))
+
   def apply(index: Int*): Double = array.getDouble(index: _*)
   def apply(index: Array[Int]): Double = apply(index: _*)
+
+  /*
+  def apply(index: Int*): Tensor = {
+    val ii: Seq[NDArrayIndex] = index.map{ i => new NDArrayIndex(i)}
+    new Tensor(array.get(ii : _*))
+  }
+  def apply(index: Array[Int]): Tensor = apply(index: _*)
+  */
 
   private def indexByBooleanTensor(t: Tensor): Array[Array[Int]] = {
     require(t.isBoolean)
@@ -112,13 +125,14 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   slice by tensor
    */
   def apply(t: Tensor): Tensor = {
-    val d = indexBy(t).map(apply)
+    val d = indexBy(t).map(x => apply(x))
     Tensor(d).reshape(t.shape)
   }
 
   /*
   this is extremely slow
    */
+  /*
   def apply(ranges: Seq[Int]*): Tensor = {
     require(ranges.length == shape.length)
 
@@ -137,6 +151,20 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
     val newShape = correctedRanges.map(_.length).toArray
     Tensor(dta).reshape(newShape)
+  }
+  */
+
+  def apply(ranges: NumscaRange*): Tensor = {
+    val indexes = ranges.zipWithIndex.map {
+      case (nr, i) =>
+        if (nr.from == 0 && nr.to == -1)
+          NDArrayIndex.all()
+        else if (nr.to == -1)
+          NDArrayIndex.interval(nr.from, shape(i))
+        else
+          NDArrayIndex.interval(nr.from, nr.to)
+    }
+    new Tensor(array.get(indexes: _*))
   }
 
   def put(index: Int*)(d: Double): Unit =

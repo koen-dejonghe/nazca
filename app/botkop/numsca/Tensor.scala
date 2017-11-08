@@ -1,11 +1,13 @@
 package botkop.numsca
 
 import botkop.numsca
+import org.nd4j.linalg.api.iter.NdIndexIterator
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing.NDArrayIndex
+import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
 import org.nd4j.linalg.ops.transforms.Transforms
 
+import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 class Tensor(val array: INDArray, val isBoolean: Boolean = false)
@@ -96,14 +98,16 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     new Tensor(array.get(ii : _*))
   }
   def apply(index: Array[Int]): Tensor = apply(index: _*)
-  */
+   */
 
   private def indexByBooleanTensor(t: Tensor): Array[Array[Int]] = {
     require(t.isBoolean)
     require(t sameShape this)
 
-    numsca.nditer(t).toArray.flatMap { ii =>
-      if (t(ii) == 0) None else Some(ii)
+    // numsca.nditer(t).toArray.flatMap { ii =>
+    // if (t(ii) == 0) None else Some(ii)
+    new NdIndexIterator(t.shape: _*).asScala.toArray.flatMap { ii: Array[Int] =>
+      if (t.array.getFloat(ii) == 0) None else Some(ii)
     }
   }
 
@@ -112,8 +116,8 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     require(t.shape.last == 1)
     require(shape.init sameElements t.shape.init)
 
-    numsca.nditer(t).toArray.map { ii =>
-      val v = t(ii).toInt
+    numsca.nditer(t).toArray.map { ii: Array[Int] =>
+      val v = t.array.getInt(ii: _*)
       ii.init :+ v
     }
   }
@@ -122,53 +126,32 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     if (t.isBoolean) indexByBooleanTensor(t) else indexByTensor(t)
 
   /*
-  slice by tensor
-   */
   def apply(t: Tensor): Tensor = {
     val d = indexBy(t).map(x => apply(x))
     Tensor(d).reshape(t.shape)
   }
-
-  /*
-  this is extremely slow
    */
+
   /*
-  def apply(ranges: Seq[Int]*): Tensor = {
-    require(ranges.length == shape.length)
-
-    def cross[T](inputs: Seq[Seq[T]]): Seq[Seq[T]] =
-      inputs.foldRight(Seq[List[T]](Nil))((el, rest) =>
-        el.flatMap(p => rest.map(p :: _)))
-
-    val correctedRanges = ranges.zipWithIndex.map {
-      case (r, i) =>
-        if (r.isEmpty) 0 until shape(i) else r
+  def apply(t: Tensor): Tensor = {
+    val ixs: Array[INDArray] = indexBy(t) map { ix: Array[Int] =>
+      val points = ix map NDArrayIndex.point
+      array.get(points: _*)
     }
-
-    val dta = cross(correctedRanges).map { ii =>
-      apply(ii.toArray)
-    } toArray
-
-    val newShape = correctedRanges.map(_.length).toArray
-    Tensor(dta).reshape(newShape)
+    new Tensor(Nd4j.toFlattened(ixs.toSeq.asJava)).reshape(t.shape)
   }
   */
 
-  /*
-  def apply(ranges: NumscaRange*): Tensor = {
-    val indexes = ranges.zipWithIndex.map {
-      case (nr, i) =>
-        if (nr.from == 0 && nr.to == -1)
-          NDArrayIndex.all()
-        else if (nr.to == -1)
-          NDArrayIndex.interval(nr.from, shape(i))
-        else
-          NDArrayIndex.interval(nr.from, nr.to)
+  def apply(t: Tensor): Tensor = {
+    val ixs: Array[INDArrayIndex] = indexBy(t) flatMap { ix: Array[Int] =>
+      ix map NDArrayIndex.point
     }
-    new Tensor(array.get(indexes: _*))
-  }
 
-  */
+    // val b = array.get(ixs:_*)
+    val b = NDArrayIndex.resolve(array, ixs: _*)
+    val c = array.get(b:_*)
+    new Tensor(c)
+  }
 
   def apply(ranges: NumscaRange*): Tensor = {
     val indexes = ranges.zipWithIndex.map {
@@ -186,6 +169,11 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
         }
     }
     new Tensor(array.get(indexes: _*))
+  }
+
+  def get(index: Int*): Tensor = {
+    val ii: Seq[NDArrayIndex] = index.map(new NDArrayIndex(_))
+    new Tensor(array.get(ii: _*))
   }
 
   def put(index: Int*)(d: Double): Unit =

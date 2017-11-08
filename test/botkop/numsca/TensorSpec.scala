@@ -3,8 +3,9 @@ package botkop.numsca
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.language.postfixOps
-
 import botkop.{numsca => ns}
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.indexing.NDArrayIndex
 
 class TensorSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
@@ -36,6 +37,23 @@ class TensorSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
     println(r)
     println(t)
+
+  }
+
+  it should "do sth simple" in {
+
+    val t = ns.arange(0, 100).reshape(10, 10)
+    val index = Seq(NDArrayIndex.point(0), NDArrayIndex.point(9))
+
+    val x: INDArray = t.array.get(index:_*)
+    println(x)
+
+    x.assign(-1)
+
+    println(t)
+
+    val u = Tensor(0.13, -1.12).reshape(2, 1)
+    println(u(0))
 
   }
 

@@ -20,11 +20,11 @@ class Driver extends Actor with Timers with ActorLogging {
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
 
+  /*
   implicit val projectName: String = "mnist"
 
   val template: NetworkConfig = ((Linear + Relu) * 2)
     .withDimensions(784, 50, 10)
-    // .withDimensions(32 * 32 * 3, 50, 10)
     .withOptimizer(Nesterov)
     .withCostFunction(Softmax)
     .withRegularization(1e-8)
@@ -43,7 +43,8 @@ class Driver extends Actor with Timers with ActorLogging {
       miniBatchSize,
       take = Some(devEvalDataLoader.numSamples))
 
-  /*
+  */
+
   implicit val projectName: String = "cifar10LBR2"
   val template: NetworkConfig = ((Linear + Relu) * 2)
     .withDimensions(32 * 32 * 3, 50, 10)
@@ -64,7 +65,6 @@ class Driver extends Actor with Timers with ActorLogging {
     new Cifar10DataLoader(mode = "train",
                           miniBatchSize,
                           take = Some(devEvalDataLoader.numSamples))
-  */
 
   // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 

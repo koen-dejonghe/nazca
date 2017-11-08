@@ -59,6 +59,8 @@ class ConvGateSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
     val dxNum = evalNumericalGradientArray(fdx, x, dout)
     val dxError = relError(dx, dxNum)
+    println(dxNum)
+    println(dx)
     println(dxError)
     dxError should be < 1e-8
 
@@ -95,15 +97,20 @@ class ConvGateSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
       val oldVal = x(ix)
 
-      x.put(ix, oldVal + h)
+      x(ix) := oldVal + h
+      // x.put(ix, oldVal + h)
+
       val pos = f(x)
 
-      x.put(ix, oldVal - h)
+      x(ix) := oldVal - h
+      // x.put(ix, oldVal - h)
       val neg = f(x)
 
-      x.put(ix, oldVal)
+      x(ix) := oldVal
+      // x.put(ix, oldVal)
       val g = ns.sum((pos - neg) * df) / (2.0 * h)
-      grad.put(ix, g)
+      grad(ix) := g
+      // grad.put(ix, g)
     }
     grad
   }
@@ -124,16 +131,20 @@ class ConvGateSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
       val oldVal = x(ix)
 
-      x.put(ix, oldVal + h)
+      x(ix) := oldVal + h
+      // x.put(ix, oldVal + h)
       val pos = f(x)
 
-      x.put(ix, oldVal - h)
+      x(ix) := oldVal - h
+      // x.put(ix, oldVal - h)
       val neg = f(x)
 
-      x.put(ix, oldVal)
+      x(ix) := oldVal
+      // x.put(ix, oldVal)
 
       val g = (pos - neg) / (2.0 * h)
-      grad.put(ix, g)
+      grad(ix) := g
+      // grad.put(ix, g)
     }
 
     grad

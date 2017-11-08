@@ -45,10 +45,18 @@ object ConvGate {
             val w1 = wp * stride
             val w2 = w1 + ww
             val window = xPad(:>, h1 :> h2, w1 :> w2)
-            val v = ns.sum(window * w.slice(f)) + b(f)
+
+            /*
+            println(b)
+            println(b.shape.toList)
+            println(f)
+            println(b(f))
+            */
+
+            val v: Double = ns.sum(window * w.slice(f)) + b(f).squeeze()
             // val index = Array(n, f, hp, wp)
-            // out.put(index, v)
-            out.get(n, f, hp, wp) := v
+            // out.put(index, v.squeeze())
+            out(n, f, hp, wp) := v
           }
         }
       }

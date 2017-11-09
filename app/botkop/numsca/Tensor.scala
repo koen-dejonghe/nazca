@@ -4,11 +4,10 @@ import botkop.numsca
 import org.nd4j.linalg.api.iter.NdIndexIterator
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
+import org.nd4j.linalg.indexing.NDArrayIndex
 import org.nd4j.linalg.ops.transforms.Transforms
 
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.language.{implicitConversions, postfixOps}
 import scala.reflect.runtime.universe._
 
@@ -50,6 +49,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def ==(d: Double): Tensor = new Tensor(array eq d, true)
   def !=(d: Double): Tensor = new Tensor(array neq d, true)
 
+  // todo when product of dim of other array = 1 then extract number iso broadcasting
   def +(other: Tensor): Tensor = new Tensor(array add bc(other))
   def -(other: Tensor): Tensor = new Tensor(array sub bc(other))
   def *(other: Tensor): Tensor = new Tensor(array mul bc(other))
@@ -83,31 +83,20 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     else
       other.array.broadcast(shape: _*)
 
-  def squeeze(): Double = {
-    require(shape sameElements Seq(1, 1))
-    array.getDouble(0, 0)
-  }
-
   def slice(i: Int): Tensor = new Tensor(array.slice(i))
   def slice(i: Int, dim: Int): Tensor = new Tensor(array.slice(i, dim))
 
-  // def apply(index: Int*): Double = array.getDouble(index: _*)
-  // def apply(index: Array[Int]): Double = apply(index: _*)
+  def squeeze(): Double = {
+    require(shape.product == 1)
+    array.getDouble(0)
+  }
+  def squeeze(index: Int*): Double = array.getDouble(index: _*)
+  def squeeze(index: Array[Int]): Double = squeeze(index: _*)
 
   def apply(index: Int*): Tensor = {
-    val missing = for (_ <- 0 until shape.length - index.length)
-      yield NDArrayIndex.point(0)
-    val ix = index.map(NDArrayIndex.point) ++ missing
-
-    println(shape.length)
-    println(index.length)
-    println(ix.length)
-
-    println
-
+    val ix = index.map(NDArrayIndex.point)
     new Tensor(array.get(ix: _*))
   }
-
   def apply(index: Array[Int]): Tensor = apply(index: _*)
 
   def apply(ranges: NumscaRange*)(
@@ -136,16 +125,14 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     * @return
     */
   def apply(t: Tensor): Tensor = {
-    val newData = indexBy(t).map(array getFloat)
+    val indexes: Array[Array[Int]] = indexBy(t)
+    val newData = indexes.map(array getFloat)
     Tensor(newData).reshape(t.shape)
   }
 
   private def indexByBooleanTensor(t: Tensor): Array[Array[Int]] = {
     require(t.isBoolean)
     require(t sameShape this)
-
-    // numsca.nditer(t).toArray.flatMap { ii =>
-    // if (t(ii) == 0) None else Some(ii)
 
     new NdIndexIterator(t.shape: _*).asScala.filterNot { ii: Array[Int] =>
       t.array.getFloat(ii) == 0
@@ -167,22 +154,19 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     if (t.isBoolean) indexByBooleanTensor(t) else indexByTensor(t)
 
   def put(index: Int*)(d: Double): Unit =
-    put(index: _*)(d)
+    put(index.toArray, d)
 
   def put(index: Array[Int], d: Double): Unit =
     array.put(NDArrayIndex.indexesFor(index: _*), d)
 
   def put(t: Tensor, d: Double): Unit =
     indexBy(t).foreach(ix => array.putScalar(ix, d))
-  // indexBy(t).foreach(ix => put(ix, d))
 
   def put(t: Tensor, f: (Double) => Double): Unit =
     indexBy(t).foreach(ix => array.putScalar(ix, f(array.getFloat(ix))))
-  // indexBy(t).foreach(ix => put(ix, f(apply(ix))))
 
   def put(t: Tensor, f: (Array[Int], Double) => Double): Unit =
     indexBy(t).foreach(ix => array.putScalar(ix, f(ix, array.getFloat(ix))))
-  // indexBy(t).foreach(ix => put(ix, f(ix, apply(ix))))
 
   def sameShape(other: Tensor): Boolean = shape sameElements other.shape
   def sameElements(other: Tensor): Boolean = data sameElements other.data

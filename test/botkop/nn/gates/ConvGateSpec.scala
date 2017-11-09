@@ -19,7 +19,7 @@ class ConvGateSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     val w_shape = Array(3, 3, 4, 4)
     val x = ns.linspace(-0.1, 0.5, num = x_shape.product).reshape(x_shape)
     val w = ns.linspace(-0.2, 0.3, num = w_shape.product).reshape(w_shape)
-    val b = ns.linspace(-0.1, 0.2, num = 3)
+    val b = ns.linspace(-0.1, 0.2, num = 3).reshape(3, 1)
 
     val cc = ConvConfig(stride = 2, pad = 1)
 
@@ -95,22 +95,19 @@ class ConvGateSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     while (it.hasNext) {
       val ix = it.next
 
-      val oldVal = x(ix)
+      val oldVal = x.squeeze(ix)
 
       x(ix) := oldVal + h
-      // x.put(ix, oldVal + h)
 
       val pos = f(x)
 
       x(ix) := oldVal - h
-      // x.put(ix, oldVal - h)
       val neg = f(x)
 
       x(ix) := oldVal
-      // x.put(ix, oldVal)
+
       val g = ns.sum((pos - neg) * df) / (2.0 * h)
       grad(ix) := g
-      // grad.put(ix, g)
     }
     grad
   }
@@ -129,22 +126,18 @@ class ConvGateSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     while (it.hasNext) {
       val ix = it.next
 
-      val oldVal = x(ix)
+      val oldVal = x.squeeze(ix)
 
       x(ix) := oldVal + h
-      // x.put(ix, oldVal + h)
       val pos = f(x)
 
       x(ix) := oldVal - h
-      // x.put(ix, oldVal - h)
       val neg = f(x)
 
       x(ix) := oldVal
-      // x.put(ix, oldVal)
 
       val g = (pos - neg) / (2.0 * h)
       grad(ix) := g
-      // grad.put(ix, g)
     }
 
     grad

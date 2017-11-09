@@ -45,17 +45,7 @@ object ConvGate {
             val w1 = wp * stride
             val w2 = w1 + ww
             val window = xPad(:>, h1 :> h2, w1 :> w2)
-
-            /*
-            println(b)
-            println(b.shape.toList)
-            println(f)
-            println(b(f))
-            */
-
-            val v: Double = ns.sum(window * w.slice(f)) + b(f).squeeze()
-            // val index = Array(n, f, hp, wp)
-            // out.put(index, v.squeeze())
+            val v = ns.sum(window * w.slice(f)) + b.squeeze(f, 0)
             out(n, f, hp, wp) := v
           }
         }
@@ -69,7 +59,7 @@ object ConvGate {
                    w: Tensor,
                    b: Tensor,
                    config: ConvConfig): (Tensor, Tensor, Tensor) = {
-    val Array(n, _, _, _) = x.shape
+    val Array(numSamples, _, _, _) = x.shape
     val Array(filters, _, hh, ww) = w.shape
     val Array(_, _, h_prime, w_prime) = dout.shape
     import config._
@@ -78,7 +68,7 @@ object ConvGate {
     val dw = ns.zerosLike(w)
     val db = ns.zerosLike(b)
 
-    for (n <- 0 until n) {
+    for (n <- 0 until numSamples) {
       val dxPad =
         ns.pad(dx.slice(n),
           Array(Array(0, 0), Array(pad, pad), Array(pad, pad)),
@@ -97,11 +87,11 @@ object ConvGate {
             val w1 = wp * stride
             val w2 = w1 + ww
 
-            val z = dout(n, f, hp, wp)
+            val z = dout.squeeze(n, f, hp, wp)
 
             dxPad(:>, h1 :> h2, w1 :> w2) += w.slice(f) * z
             dw.slice(f) += xPad(:>, h1 :> h2, w1 :> w2) * z
-            db.slice(f) += z
+            db(f, 0) += z
           }
         }
       }

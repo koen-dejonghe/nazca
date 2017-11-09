@@ -53,7 +53,7 @@ class TensorSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     println(t)
 
     val u = Tensor(0.13, -1.12).reshape(2, 1)
-    println(u(0))
+    println(u(0, 0))
 
   }
 

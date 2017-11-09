@@ -23,4 +23,3 @@ case object Softmax extends Cost {
     (loss, dx.T)
   }
 }
-

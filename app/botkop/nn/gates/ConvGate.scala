@@ -1,37 +1,63 @@
 package botkop.nn.gates
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import botkop.nn.optimizers.Optimizer
 import botkop.numsca._
 import botkop.{numsca => ns}
+import com.typesafe.scalalogging.LazyLogging
 import org.nd4j.linalg.factory.Nd4j.PadMode
 
 class ConvGate(next: ActorRef, config: ConvConfig)
     extends Actor
     with ActorLogging {
 
-  // import config._
+  import config._
 
   val name: String = self.path.name
   log.debug(s"my name is $name")
 
+  ns.rand.setSeed(seed)
+
+  log.debug(self.path.toString)
+
+  // todo: create Initializer classes
+  val w: Tensor = weightScale * ns.randn(numFilters, numChannels, filterSize, filterSize)
+  val b: Tensor = weightScale * ns.zeros(numFilters, 1)
+
   override def receive: Receive = {
     case Forward(x, y) =>
+      log.debug("received msg")
+      /*
+      val xt = x.transpose // num samples as first dimension
+      log.debug("1")
+      val numSamples = xt.shape.head
+      log.debug("2")
+      val xta = xt.reshape(numSamples, numChannels, height, width)
+      log.debug("3")
+      */
+
+      val z = ConvGate.convForward(x, w, b, stride, pad)
+      log.debug("sending response")
+      next ! Forward(z, y)
+
   }
 }
 
-object ConvGate {
+object ConvGate extends LazyLogging {
 
   def convForward(x: Tensor,
                   w: Tensor,
                   b: Tensor,
-                  config: ConvConfig): Tensor = {
-    import config._
+                  stride: Int,
+                  pad: Int): Tensor = {
 
     val Array(samples, _, height, width) = x.shape
     val Array(filters, _, hh, ww) = w.shape
     val hPrime = 1 + (height + 2 * pad - hh) / stride
     val wPrime = 1 + (width + 2 * pad - ww) / stride
     val out = ns.zeros(samples, filters, hPrime, wPrime)
+
+    logger.debug("starting calculation")
 
     for (n <- 0 until samples) {
       val xPad = ns.pad(x.slice(n),
@@ -58,11 +84,11 @@ object ConvGate {
                    x: Tensor,
                    w: Tensor,
                    b: Tensor,
-                   config: ConvConfig): (Tensor, Tensor, Tensor) = {
+                   stride: Int,
+                   pad: Int): (Tensor, Tensor, Tensor) = {
     val Array(numSamples, _, _, _) = x.shape
-    val Array(filters, _, hh, ww) = w.shape
+    val Array(channels, _, hh, ww) = w.shape
     val Array(_, _, h_prime, w_prime) = dout.shape
-    import config._
 
     val dx = ns.zerosLike(x)
     val dw = ns.zerosLike(w)
@@ -71,15 +97,15 @@ object ConvGate {
     for (n <- 0 until numSamples) {
       val dxPad =
         ns.pad(dx.slice(n),
-          Array(Array(0, 0), Array(pad, pad), Array(pad, pad)),
-          PadMode.CONSTANT)
+               Array(Array(0, 0), Array(pad, pad), Array(pad, pad)),
+               PadMode.CONSTANT)
 
       val xPad =
         ns.pad(x.slice(n),
-          Array(Array(0, 0), Array(pad, pad), Array(pad, pad)),
-          PadMode.CONSTANT)
+               Array(Array(0, 0), Array(pad, pad), Array(pad, pad)),
+               PadMode.CONSTANT)
 
-      for (f <- 0 until filters) {
+      for (f <- 0 until channels) {
         for (hp <- 0 until h_prime) {
           for (wp <- 0 until w_prime) {
             val h1 = hp * stride
@@ -104,4 +130,14 @@ object ConvGate {
     Props(new ConvGate(next, config))
 }
 
-case class ConvConfig(stride: Int, pad: Int)
+case class ConvConfig(numChannels: Int,
+                      height: Int,
+                      width: Int,
+                      numFilters: Int,
+                      filterSize: Int,
+                      weightScale: Double,
+                      regularization: Double,
+                      optimizer: Optimizer,
+                      stride: Int,
+                      pad: Int,
+                      seed: Long)

@@ -2,21 +2,22 @@ package botkop.nn.gates
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestActors, TestKit, TestProbe}
-import botkop.nn.optimizers.{AdamOptimizer, Optimizer}
+import botkop.nn.optimizers.AdamOptimizer
 import botkop.numsca.Tensor
-import org.scalatest._
 import botkop.{numsca => ns}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.nd4j.linalg.api.buffer.DataBuffer
 import org.nd4j.linalg.api.buffer.util.DataTypeUtil
+import org.scalatest._
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class ConvGateSpec
-    extends TestKit(ActorSystem("ConvGateSpec", ConfigFactory.parseString(
-      """
+    extends TestKit(
+      ActorSystem("ConvGateSpec",
+                  ConfigFactory.parseString("""
         |akka {
         |  loglevel = "DEBUG"
         |}
@@ -80,7 +81,7 @@ class ConvGateSpec
       val stride = 1
       val pad = 1
 
-      val out = ConvGate.convForward(x, w, b, stride, pad)
+      // val out = ConvGate.convForward(x, w, b, stride, pad)
       val (dx, dw, db) = ConvGate.convBackward(dout, x, w, b, stride, pad)
 
       def fdx(a: Tensor): Tensor = ConvGate.convForward(a, w, b, stride, pad)
@@ -127,14 +128,15 @@ class ConvGateSpec
 
       val gate = system.actorOf(ConvGate.props(probe.ref, cc))
 
-      // val x = ns.randn(4, 32 * 32 * 3)
-      val x = ns.randn(4, 3, 32, 32)
-      val y = ns.randn(4, 1)
+      val numSamples = 16
+      val imageSize = 3 * 32 * 32
+      val x = ns.randn(imageSize, numSamples)
+      val y = ns.randn(1, numSamples)
 
       gate ! Forward(x, y)
 
-      val a = probe.expectMsgType[Forward](10 seconds)
-      //println(a)
+      val result = probe.expectMsgType[Forward](120 seconds)
+      println(result.x.shape.toList)
 
     }
   }

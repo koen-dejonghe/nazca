@@ -21,22 +21,20 @@ class ConvGate(next: ActorRef, config: ConvConfig)
   log.debug(self.path.toString)
 
   // todo: create Initializer classes
-  val w: Tensor = weightScale * ns.randn(numFilters, numChannels, filterSize, filterSize)
+  val w: Tensor = weightScale * ns.randn(numFilters,
+                                         numChannels,
+                                         filterSize,
+                                         filterSize)
   val b: Tensor = weightScale * ns.zeros(numFilters, 1)
 
   override def receive: Receive = {
     case Forward(x, y) =>
       log.debug("received msg")
-      /*
       val xt = x.transpose // num samples as first dimension
-      log.debug("1")
       val numSamples = xt.shape.head
-      log.debug("2")
       val xta = xt.reshape(numSamples, numChannels, height, width)
-      log.debug("3")
-      */
 
-      val z = ConvGate.convForward(x, w, b, stride, pad)
+      val z = ConvGate.convForward(xta, w, b, stride, pad)
       log.debug("sending response")
       next ! Forward(z, y)
 
@@ -57,26 +55,29 @@ object ConvGate extends LazyLogging {
     val wPrime = 1 + (width + 2 * pad - ww) / stride
     val out = ns.zeros(samples, filters, hPrime, wPrime)
 
-    logger.debug("starting calculation")
+    val l = List.range(0, filters * hPrime * wPrime).par
+    println(l.size)
 
-    for (n <- 0 until samples) {
+    for (n <- (0 until samples).toList) {
       val xPad = ns.pad(x.slice(n),
                         Array(Array(0, 0), Array(pad, pad), Array(pad, pad)),
                         PadMode.CONSTANT)
-      for (f <- 0 until filters) {
-        for (hp <- 0 until hPrime) {
-          for (wp <- 0 until wPrime) {
-            val h1 = hp * stride
-            val h2 = h1 + hh
-            val w1 = wp * stride
-            val w2 = w1 + ww
-            val window = xPad(:>, h1 :> h2, w1 :> w2)
-            val v = ns.sum(window * w.slice(f)) + b.squeeze(f, 0)
-            out(n, f, hp, wp) := v
-          }
-        }
+
+      for (i <- l) {
+        val f = (i / (hPrime * wPrime)) % filters
+        val hp = (i / wPrime) % hPrime
+        val wp = i % wPrime
+
+        val h1 = hp * stride
+        val h2 = h1 + hh
+        val w1 = wp * stride
+        val w2 = w1 + ww
+        val window = xPad(:>, h1 :> h2, w1 :> w2)
+        val v = ns.sum(window * w.slice(f)) + b.squeeze(f, 0)
+        out(n, f, hp, wp) := v
       }
     }
+
     out
   }
 
@@ -125,6 +126,39 @@ object ConvGate extends LazyLogging {
     }
     (dx, dw, db)
   }
+
+  /*
+  // maybe use org.nd4j.linalg.convolution.DefaultConvolutionInstance.convn
+  def convForwardIm2Col(x: Tensor,
+                        w: Tensor,
+                        b: Tensor,
+                        stride: Int,
+                        pad: Int): Tensor = {
+    val Array(n, num_channels, height, width) = x.shape
+    val Array(num_filters, _, filter_height, filter_width) = w.shape
+
+    assert ((width + 2 * pad - filter_width) % stride == 0, "width does not work")
+    assert ((height + 2 * pad - filter_height) % stride == 0, "height does not work")
+
+    // Create output
+    val out_height = (height + 2 * pad - filter_height) / stride + 1
+    val out_width = (width + 2 * pad - filter_width) / stride + 1
+
+    println(w.shape.toList)
+
+    val zzz = new Tensor(Convolution.im2col(x.array, height, width, stride, stride, pad, pad, true))
+    println(zzz.shape.toList)
+
+    val x_cols = zzz
+    println(x_cols.shape.toList)
+
+    val res = w.reshape(w.shape.head, w.shape.tail.product).dot(x_cols) + b
+
+    val out = res.reshape(w.shape.head, out_height, out_width, x.shape.head)
+    out.transpose
+
+  }
+   */
 
   def props(next: ActorRef, config: ConvConfig) =
     Props(new ConvGate(next, config))

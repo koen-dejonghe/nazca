@@ -74,6 +74,8 @@ case class NetworkBuilder(gateStubs: List[GateStub] = List.empty,
             SigmoidConfig
           case Output =>
             OutputConfig(cost)
+          case Conv =>
+            throw new NotImplementedError("convolutions not implemented")
         }
     }
     NetworkConfig(configs)

@@ -33,3 +33,7 @@ case object BatchNorm extends GateStub {
 case object Output extends GateStub {
   override val category = "output"
 }
+
+case object Conv extends GateStub {
+  override val category = "conv"
+}

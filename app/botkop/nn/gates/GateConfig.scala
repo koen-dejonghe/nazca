@@ -1,6 +1,6 @@
 package botkop.nn.gates
 
-import akka.actor.{ActorContext, ActorRef, ActorSystem}
+import akka.actor.{ActorContext, ActorRef}
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json._
 
@@ -17,6 +17,8 @@ object GateConfig extends LazyLogging {
       name match {
         case "BatchNormConfig" =>
           Json.fromJson[BatchNormConfig](data.get)
+        case "ConvConfig" =>
+          Json.fromJson[ConvConfig](data.get)
         case "DropoutConfig" =>
           Json.fromJson[DropoutConfig](data.get)
         case "LinearConfig" =>
@@ -43,6 +45,8 @@ object GateConfig extends LazyLogging {
     val (prod: Product, sub: Option[JsValue]) = foo match {
       case b: BatchNormConfig =>
         (b, Some(Json.toJson(b)(BatchNormConfig.f)))
+      case b: ConvConfig =>
+        (b, Some(Json.toJson(b)(ConvConfig.f)))
       case b: DropoutConfig =>
         (b, Some(Json.toJson(b)(DropoutConfig.f)))
       case b: LinearConfig =>

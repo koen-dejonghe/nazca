@@ -45,9 +45,9 @@ class Driver extends Actor with Timers with ActorLogging {
 
   */
 
-  implicit val projectName: String = "cifar10LBR2"
-  val template: NetworkConfig = ((Linear + Relu) * 2)
-    .withDimensions(32 * 32 * 3, 50, 10)
+  implicit val projectName: String = "cifar10LBR4"
+  val template: NetworkConfig = ((Linear + BatchNorm + Relu + Dropout) * 4)
+    .withDimensions(32 * 32 * 3, 50, 50, 50, 10)
     .withOptimizer(Nesterov)
     .withCostFunction(Softmax)
     .withRegularization(1e-4)

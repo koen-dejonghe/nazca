@@ -5,8 +5,16 @@
         </div>
         <div class="col-md-10">
             <div class="form-group">
-                <label for="nn-json">Json:</label>
-                <textarea class="form-control" rows="20" id="nn-json"></textarea>
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Network Editor</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div id="nn-json"></div>
+                    </div>
+                </div>
+
             </div>
             <button id="canvas-deploy-button" type="button" class="btn btn-primary">Deploy</button>
         </div>
@@ -15,6 +23,11 @@
 
 <script>
 $(function () {
+
+    var editor = ace.edit("nn-json");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/json");
+
     var canvasSocket;
 
     var canvasSocketOnOpen = function () {
@@ -43,12 +56,12 @@ $(function () {
     setCanvasSocket();
 
     function dispatcher(msg) {
-        console.log(msg)
-        $('#nn-json').val(msg);
+        console.log(msg);
+        editor.setValue(msg, -1)
     }
 
     $("#canvas-deploy-button").click(function () {
-        var json = $('#nn-json').val();
+        var json = editor.getValue();
         canvasSocket.send(json)
     });
 

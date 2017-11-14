@@ -9,12 +9,17 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.io.Source
 import scala.util.Random
 
-class MnistDataLoader(file: String,
+class MnistDataLoader(mode: String,
                       miniBatchSize: Int,
                       take: Option[Int] = None,
                       seed: Long = 231)
     extends DataLoader
     with LazyLogging {
+
+  val file: String = mode match {
+    case "train" => "data/mnist/mnist_train.csv.gz"
+    case "dev" => "data/mnist/mnist_test.csv.gz"
+  }
 
   val numEntries: Int =
     Source.fromInputStream(gzis(file)).getLines().length

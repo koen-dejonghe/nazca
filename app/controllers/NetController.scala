@@ -4,7 +4,7 @@ import javax.inject._
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
-import botkop.nn.Driver
+import botkop.nn.NetDriver
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 import sockets.{CanvasSocket, ControlSocket, MonitorSocket}
@@ -15,7 +15,7 @@ class NetController @Inject()(cc: ControllerComponents)(
     mat: Materializer)
     extends AbstractController(cc) {
 
-  val monitor: ActorRef = system.actorOf(Driver.props(), "driver")
+  val monitor: ActorRef = system.actorOf(NetDriver.props(), "driver")
 
   def index = Action {
     Ok(views.html.index())

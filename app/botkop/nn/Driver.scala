@@ -20,7 +20,6 @@ class Driver extends Actor with Timers with ActorLogging {
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
 
-  /*
   implicit val projectName: String = "mnist"
 
   val template: NetworkConfig = ((Linear + Relu) * 2)
@@ -35,16 +34,15 @@ class Driver extends Actor with Timers with ActorLogging {
   val miniBatchSize = 64
 
   val trainingDataLoader =
-    new MnistDataLoader("data/mnist/mnist_train.csv.gz", miniBatchSize)
+    new MnistDataLoader(mode = "train", miniBatchSize)
   val devEvalDataLoader =
-    new MnistDataLoader("data/mnist/mnist_test.csv.gz", miniBatchSize)
+    new MnistDataLoader(mode = "dev", miniBatchSize)
   val trainEvalDataLoader =
-    new MnistDataLoader("data/mnist/mnist_train.csv.gz",
-      miniBatchSize,
-      take = Some(devEvalDataLoader.numSamples))
+    new MnistDataLoader(mode = "train",
+                        miniBatchSize,
+                        take = Some(devEvalDataLoader.numSamples))
 
-  */
-
+  /*
   implicit val projectName: String = "cifar10LBR4"
   val template: NetworkConfig = ((Linear + BatchNorm + Relu + Dropout) * 4)
     .withDimensions(32 * 32 * 3, 50, 50, 50, 10)
@@ -65,8 +63,9 @@ class Driver extends Actor with Timers with ActorLogging {
     new Cifar10DataLoader(mode = "train",
                           miniBatchSize,
                           take = Some(devEvalDataLoader.numSamples))
+   */
 
-  // timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
+  timers.startPeriodicTimer(PersistTick, PersistTick, 30 seconds)
 
   override def receive: Receive = empty(template)
 
@@ -138,7 +137,7 @@ class Driver extends Actor with Timers with ActorLogging {
       mediator ! Publish("control", Persist)
 
     case z =>
-      log.error(
+      log.warning(
         s"don't know how to handle message of type ${z.getClass.getCanonicalName}")
   }
 
@@ -148,4 +147,3 @@ object Driver {
   def props() = Props(new Driver())
 }
 
-object PersistTick

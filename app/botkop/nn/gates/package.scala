@@ -27,6 +27,7 @@ package object gates {
   case object Start
   case object Pause
   case object NextBatch
+  case object PersistTick
   case class Epoch(epoch: Int, ts: Long = System.currentTimeMillis()) {
     def inc = Epoch(epoch + 1)
   }

@@ -1,22 +1,58 @@
-<div id="canvas-tab" class="tab-pane fade container-fluid">
+<div id="canvas-tab" class="tab-pane fade in active container-fluid">
     <br/>
     <div class="row content">
         <div class="col-md-2">
         </div>
         <div class="col-md-10">
-            <div class="form-group">
 
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Network Editor</h3>
+            <ul class="nav nav-tabs">
+                <li class="active"><a data-toggle="tab" href="#drawing-tab">Drawing board</a></li>
+                <li><a data-toggle="tab" href="#editor-tab">Editor</a></li>
+            </ul>
+
+            <div class="tab-content">
+
+                <div id="drawing-tab" class="tab-pane fade in active container-fluid">
+                    <br/>
+
+                    <div class="row">
+                        <div class="col-md-9">
+                            <div class="panel panel-default" id="drawing-panel">
+                                <div class="panel-heading">Canvas</div>
+                                <div class="panel-body">
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-1">
                     </div>
+
+                        <div class="col-md-2">
+                            <div class="panel panel-default" id="building-blocks">
+                                <div class="panel-heading">Building Blocks</div>
+                                <div class="panel-body">
+                                    <button type="button" class="btn btn-primary btn-block" draggable="true">Linear</button>
+                                    <button type="button" class="btn btn-primary btn-block" draggable="true">BatchNorm</button>
+                                    <button type="button" class="btn btn-primary btn-block" draggable="true">Relu</button>
+                                    <button type="button" class="btn btn-primary btn-block" draggable="true">Sigmoid</button>
+                                    <button type="button" class="btn btn-primary btn-block" draggable="true">DropOut</button>
+                                    <button type="button" class="btn btn-primary btn-block" draggable="true">Output</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="editor-tab" class="tab-pane fade container-fluid">
+                    <br/>
                     <div class="panel-body">
                         <div id="nn-json"></div>
                     </div>
                 </div>
 
             </div>
-            <button id="canvas-deploy-button" type="button" class="btn btn-primary">Deploy</button>
         </div>
     </div>
 </div>

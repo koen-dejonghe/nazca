@@ -29,7 +29,7 @@ class Driver extends Actor with Timers with ActorLogging {
     .withRegularization(1e-8)
     .withLearningRate(0.4)
     .withLearningRateDecay(0.99)
-    .networkConfig
+    .configure
 
   val miniBatchSize = 64
 

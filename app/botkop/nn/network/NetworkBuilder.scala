@@ -43,7 +43,7 @@ case class NetworkBuilder(gateStubs: List[GateStub] = List.empty,
       NesterovOptimizer(learningRate, learningRateDecay)
   }
 
-  def networkConfig: NetworkConfig = {
+  def configure: NetworkConfig = {
     require(gateStubs.nonEmpty, "no gates defined")
     require(dimensions.nonEmpty, "no dimensions defined")
     val numLinearGates = gateStubs.count(g => g == Linear)
@@ -82,7 +82,7 @@ case class NetworkBuilder(gateStubs: List[GateStub] = List.empty,
   }
 
   def build(implicit context: ActorContext, projectName: String): Network = {
-    networkConfig.materialize
+    configure.materialize
   }
 
 }

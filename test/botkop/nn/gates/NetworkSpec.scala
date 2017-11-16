@@ -32,7 +32,7 @@ class NetworkSpec
         .withCostFunction(Softmax)
         .withRegularization(1e-3)
         .withLearningRate(0.8)
-        .networkConfig
+        .configure
 
       val json = Json.prettyPrint(Json.toJson(t1))
       logger.info(json)

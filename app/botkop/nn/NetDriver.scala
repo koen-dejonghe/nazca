@@ -6,8 +6,7 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
 import botkop.nn.data.loaders.DataLoader
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
-import botkop.nn.network.{Network, NetworkConfig}
-import play.api.libs.json.{Format, Json}
+import botkop.nn.network.Network
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -132,15 +131,6 @@ object NetDriver {
   def props() = Props(new NetDriver())
 }
 
-case class Project(name: String,
-                   miniBatchSize: Int,
-                   dataSet: String,
-                   persistenceFrequency: Int,
-                   template: NetworkConfig)
-
-object Project {
-  implicit val f: Format[Project] = Json.format
-}
 
 case class DeployedProject(project: Project,
                            network: Network,

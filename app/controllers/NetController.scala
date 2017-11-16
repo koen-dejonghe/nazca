@@ -5,6 +5,8 @@ import javax.inject._
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
 import botkop.nn.NetDriver
+import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.Files
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 import sockets.{CanvasSocket, ControlSocket, MonitorSocket}
@@ -13,7 +15,7 @@ import sockets.{CanvasSocket, ControlSocket, MonitorSocket}
 class NetController @Inject()(cc: ControllerComponents)(
     implicit system: ActorSystem,
     mat: Materializer)
-    extends AbstractController(cc) {
+    extends AbstractController(cc) with LazyLogging {
 
   val monitor: ActorRef = system.actorOf(NetDriver.props(), "driver")
 
@@ -38,5 +40,13 @@ class NetController @Inject()(cc: ControllerComponents)(
       CanvasSocket.props(out)
     }
   }
+
+  def upload: Action[MultipartFormData[Files.TemporaryFile]] =
+    Action(parse.multipartFormData) { request =>
+
+      logger.debug("uploading file")
+
+        Ok("file uploaded")
+    }
 
 }

@@ -1,0 +1,30 @@
+<!DOCTYPE html>  <!-- HTML5 document type -->
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gojs/1.8.2/go-debug.js"></script>
+</head>
+<body>
+
+<div id="myDiagramDiv" style="width:400px; height:150px; background-color: #DAE4E4;"></div>
+
+<script>
+    var $ = go.GraphObject.make;
+    var myDiagram =
+        $(go.Diagram, "myDiagramDiv",
+            {
+                initialContentAlignment: go.Spot.Center, // center Diagram contents
+                "undoManager.isEnabled": true // enable Ctrl-Z to undo and Ctrl-Y to redo
+            });
+
+    var myModel = $(go.Model);
+    // in the model data, each node is represented by a JavaScript object:
+    myModel.nodeDataArray = [
+        { key: "Alpha" },
+        { key: "Beta" },
+        { key: "Gamma" }
+    ];
+    myDiagram.model = myModel;
+</script>
+
+</body>
+</html>

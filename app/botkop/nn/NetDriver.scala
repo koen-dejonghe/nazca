@@ -10,6 +10,7 @@ import botkop.nn.network.{Network, NetworkConfig}
 import play.api.libs.json.{Format, Json}
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class NetDriver extends Actor with Timers with ActorLogging {
 
@@ -77,7 +78,7 @@ class NetDriver extends Actor with Timers with ActorLogging {
 
     import project._
 
-    val nn = template.materialize(context, project.name)
+    val nn = template.materialize(context, name)
 
     val trainingDataLoader =
       DataLoader.instance(dataSet, "train", miniBatchSize)
@@ -118,8 +119,9 @@ class NetDriver extends Actor with Timers with ActorLogging {
     */
   def start(deployedProject: DeployedProject): Unit = {
     import deployedProject._
+    import project.{persistenceFrequency => f}
+
     miniBatcher ! NextBatch
-    val f = project.persistenceFrequency
     if (f > 0)
       timers.startPeriodicTimer(PersistTick, PersistTick, f seconds)
   }

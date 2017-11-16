@@ -1,0 +1,62 @@
+{
+  "name": "mnist-sample-project",
+  "miniBatchSize": 64,
+  "dataSet": "mnist",
+  "persistenceFrequency": 30,
+  "template": {
+    "configs": [
+      {
+        "class": "LinearConfig",
+        "data": {
+          "shape": [
+            50,
+            784
+          ],
+          "regularization": 1E-8,
+          "optimizer": {
+            "class": "NesterovOptimizer",
+            "data": {
+              "learningRate": 0.4,
+              "learningRateDecay": 0.99,
+              "beta": 0.9
+            }
+          },
+          "seed": 231
+        }
+      },
+      {
+        "class": "ReluConfig"
+      },
+      {
+        "class": "LinearConfig",
+        "data": {
+          "shape": [
+            10,
+            50
+          ],
+          "regularization": 1E-8,
+          "optimizer": {
+            "class": "NesterovOptimizer",
+            "data": {
+              "learningRate": 0.4,
+              "learningRateDecay": 0.99,
+              "beta": 0.9
+            }
+          },
+          "seed": 231
+        }
+      },
+      {
+        "class": "ReluConfig"
+      },
+      {
+        "class": "OutputConfig",
+        "data": {
+          "cost": {
+            "class": "Softmax"
+          }
+        }
+      }
+    ]
+  }
+}

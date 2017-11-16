@@ -15,7 +15,7 @@ class MiniBatcher(dataLoader: DataLoader, entryGate: ActorRef)
   mediator ! Subscribe("control", self)
 
   override def receive: Receive = {
-    log.info("starting epoch 1")
+    log.info("ready for epoch 1")
     val it = dataLoader.iterator
     // assuming at least one batch
     accept(it.next(), it, Epoch(1))

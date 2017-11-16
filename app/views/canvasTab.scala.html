@@ -12,7 +12,32 @@
 
             <div class="tab-content">
 
-                @editorTab()
+                <div id="editor-tab" class="tab-pane fade in active container-fluid">
+                    <br/>
+                    <div class="row">
+
+                        <div class="col-md-8">
+                            <div class="panel panel-default">
+                                <div class="panel-heading" id="json-panel-header">Json</div>
+                                <div class="panel-body">
+                                    <div class="editor-panel" id="nn-json"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="btn btn-default btn-block" id="upload-button">
+                                Open
+                                <input type="file" name="projectJson" id="projectJson" style="display: none;">
+                            </label>
+
+                            <button type="button" class="btn btn-default btn-block">Save</button>
+                            <button type="button" class="btn btn-default btn-block" id="canvas-deploy-button">Deploy</button>
+                        </div>
+
+                    </div>
+                </div>
+
 
                 <div id="drawing-tab" class="tab-pane fade in container-fluid">
                     <br/>
@@ -51,6 +76,12 @@
 <script>
 $(function () {
 
+    var jsonEditor = ace.edit("nn-json");
+    jsonEditor.setTheme("ace/theme/solarized_light");
+    jsonEditor.getSession().setMode("ace/mode/json");
+    jsonEditor.setKeyboardHandler("ace/keyboard/vim");
+    jsonEditor.$blockScrolling = Infinity;
+
     var canvasSocket;
 
     var canvasSocketOnOpen = function () {
@@ -63,7 +94,6 @@ $(function () {
     };
 
     var canvasSocketOnMessage = function (msg) {
-        // dispatcher(JSON.parse(msg.data));
         dispatcher(msg.data);
     };
 
@@ -79,14 +109,32 @@ $(function () {
     setCanvasSocket();
 
     function dispatcher(msg) {
-        // console.log(msg);
-        // editor.setValue(msg, -1)
+        jsonEditor.setValue(msg, -1);
     }
 
     $("#canvas-deploy-button").click(function () {
-        // var json = editor.getValue();
-        // canvasSocket.send(json)
+        var json = jsonEditor.getValue();
+        canvasSocket.send(json)
     });
+
+    function upload() {
+
+        $('#json-panel-header').html('Json: ' + projectJson.files[0].name);
+
+        var formData = new FormData();
+        formData.append('project', projectJson.files[0]);
+
+        $.ajax({
+            url: '@routes.NetController.upload',
+            type: 'POST',
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            data: formData
+        });
+    }
+
+    $("#projectJson").change(upload);
 
 });
 </script>

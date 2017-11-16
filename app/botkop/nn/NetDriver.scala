@@ -2,7 +2,7 @@ package botkop.nn
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
+import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import botkop.nn.data.loaders.DataLoader
 import botkop.nn.data.{Evaluator, MiniBatcher}
 import botkop.nn.gates._
@@ -53,6 +53,10 @@ class NetDriver extends Actor with Timers with ActorLogging {
     case Quit =>
       undeploy(deployedProject)
       context become receive
+
+    case PersistTick =>
+      mediator ! Publish("control", Persist)
+
   }
 
   /**
@@ -67,7 +71,6 @@ class NetDriver extends Actor with Timers with ActorLogging {
     case Quit =>
       undeploy(deployedProject)
       context become receive
-
   }
 
   /**

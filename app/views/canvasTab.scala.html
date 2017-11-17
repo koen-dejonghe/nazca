@@ -31,7 +31,7 @@
                                 <input type="file" name="projectJson" id="projectJson" style="display: none;">
                             </label>
 
-                            <button type="button" class="btn btn-default btn-block">Save</button>
+                            <button type="button" class="btn btn-default btn-block" id="save-button">Save</button>
                             <button type="button" class="btn btn-default btn-block" id="canvas-deploy-button">Deploy</button>
                         </div>
 
@@ -76,6 +76,8 @@
 <script>
 $(function () {
 
+    var fileName = "";
+
     var jsonEditor = ace.edit("nn-json");
     jsonEditor.setTheme("ace/theme/solarized_light");
     jsonEditor.getSession().setMode("ace/mode/json");
@@ -118,8 +120,9 @@ $(function () {
     });
 
     function upload() {
+        fileName = projectJson.files[0].name;
 
-        $('#json-panel-header').html('Json: ' + projectJson.files[0].name);
+        $('#json-panel-header').html('Json: ' + fileName);
 
         var formData = new FormData();
         formData.append('project', projectJson.files[0]);
@@ -136,6 +139,27 @@ $(function () {
 
     $("#projectJson").change(upload);
 
+    function download(filename, text) {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+
+    $("#save-button").click(function () {
+        var json = jsonEditor.getValue();
+        var projectName = JSON.parse(json).name
+        if (projectName !== null) {
+            var name = projectName + ".json";
+            download(name, json);
+        }
+        else {
+            console.log("invalid project json")
+        }
+    });
+
 });
 </script>
-

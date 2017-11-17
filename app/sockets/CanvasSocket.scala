@@ -5,7 +5,7 @@ import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 import botkop.nn.Project
 import botkop.nn.gates.CanvasMessage
-import play.api.libs.json.{JsError, JsResult, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 
 class CanvasSocket(socket: ActorRef) extends Actor with ActorLogging {
 
@@ -16,8 +16,6 @@ class CanvasSocket(socket: ActorRef) extends Actor with ActorLogging {
 
     // from socket -> publish to driver
     case json: String =>
-
-      println(json)
 
       // should be valid project json
       val result = Json.parse(json).validate[Project]

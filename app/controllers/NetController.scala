@@ -7,16 +7,15 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.stream.Materializer
+import botkop.nn.NetDriver
 import botkop.nn.gates.CanvasMessage
-import botkop.nn.{NetDriver, Project}
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.Files
-import play.api.libs.json.Json
 import play.api.libs.streams.ActorFlow
 import play.api.mvc._
 import sockets.{CanvasSocket, ControlSocket, MonitorSocket}
 
-import scala.io.Source
+import scala.io.{Source => Src}
 
 @Singleton
 class NetController @Inject()(cc: ControllerComponents)(
@@ -52,37 +51,30 @@ class NetController @Inject()(cc: ControllerComponents)(
 
   def upload: Action[MultipartFormData[Files.TemporaryFile]] =
     Action(parse.multipartFormData) { request =>
-
-      logger.info("recevied files " + request.body.files.toList)
+      logger.info("received files " + request.body.files.toList)
 
       request.body
         .file("project")
         .map { json =>
           val filename = json.filename
-          json.contentType match {
-            case Some("application/json") =>
-              try {
-                val tmpFile = File.createTempFile("botkop.nn-", null)
-                json.ref.moveTo(tmpFile, replace = true)
-                val contents =
-                  Source.fromFile(tmpFile).getLines().mkString("\n")
-                tmpFile.delete()
-                mediator ! Publish("control",
-                                   CanvasMessage(target = "socket",
-                                                 message = contents))
+          try {
+            val tmpFile = File.createTempFile("botkop.nn-", null)
+            json.ref.moveTo(tmpFile, replace = true)
+            val contents =
+              Src.fromFile(tmpFile).getLines().mkString("\n")
+            tmpFile.delete()
+            mediator ! Publish("control",
+                               CanvasMessage(target = "socket",
+                                             message = contents))
 
-                Ok(s"$filename uploaded")
-              } catch {
-                case t: Throwable =>
-                  logger.error("error during upload", t)
-                  BadRequest("error during upload")
-              }
-            case _ =>
-              logger.error("unknown content type")
-              BadRequest("unknown content type")
+            Ok(s"$filename uploaded")
+          } catch {
+            case t: Throwable =>
+              logger.error("error during upload", t)
+              BadRequest("error during upload")
           }
         }
-        .getOrElse{
+        .getOrElse {
           logger.error("error during upload")
           BadRequest
         }

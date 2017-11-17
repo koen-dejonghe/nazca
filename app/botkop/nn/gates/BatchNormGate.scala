@@ -20,7 +20,7 @@ class BatchNormGate(next: ActorRef, config: BatchNormConfig)
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
   mediator ! Subscribe("control", self)
 
-  val Array(d, n) = shape.toArray
+  val List(d, n) = shape
 
   val runningMean: Tensor = ns.zeros(d, 1)
   val runningVar: Tensor = ns.zeros(d, 1)

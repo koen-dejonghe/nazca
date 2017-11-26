@@ -16,13 +16,21 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
   def data: Array[Double] = array.dup.data.asDouble
 
+  def copy(): Tensor = new Tensor(array.dup())
+
   def shape: Array[Int] = array.shape()
   def reshape(newShape: Array[Int]) = new Tensor(array.reshape(newShape: _*))
   def reshape(newShape: Int*) = new Tensor(array.reshape(newShape: _*))
   def shapeLike(t: Tensor): Tensor = reshape(t.shape)
 
-  def transpose = new Tensor(array.transpose())
-  def T: Tensor = transpose
+  def transpose() = new Tensor(array.transpose())
+  def T: Tensor = transpose()
+  def transpose(axes: Array[Int]): Tensor = {
+    require(axes.sorted sameElements shape.indices, "invalid axes")
+    val newShape = axes.map(a => shape(a))
+    reshape(newShape)
+  }
+  def transpose(axes: Int*): Tensor = transpose(axes.toArray)
 
   def round: Tensor =
     Tensor(data.map(math.round(_).toDouble)).reshape(this.shape)
@@ -67,7 +75,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
   def >(other: Tensor): Tensor = new Tensor(array gt bc(other), true)
   def <(other: Tensor): Tensor = new Tensor(array lt bc(other), true)
-  def ==(other: Tensor): Tensor = new Tensor(array eq bc(other), true)
+  def ==(other: Tensor): Tensor = new Tensor(array eq other.array, true)
   def !=(other: Tensor): Tensor = new Tensor(array neq bc(other), true)
 
   def maximum(other: Tensor): Tensor =

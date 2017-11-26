@@ -77,8 +77,11 @@ package object numsca {
   def min(t: Tensor): Tensor = new Tensor(Nd4j.min(t.array))
   def min(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.min(t.array, axis))
 
-  def sum(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.sum(t.array, axis))
   def sum(t: Tensor): Double = Nd4j.sum(t.array).getDouble(0, 0)
+  def sum(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.sum(t.array, axis))
+
+  def prod(t: Tensor): Double = Nd4j.prod(t.array).getDouble(0, 0)
+  def prod(t: Tensor, axis: Int): Tensor = new Tensor(Nd4j.prod(t.array, axis))
 
   def arange(end: Double): Tensor = new Tensor(Nd4j.arange(end))
   def arange(start: Double, end: Double): Tensor =
@@ -114,9 +117,18 @@ package object numsca {
   def multiply(a: Tensor, b: Tensor): Tensor = a * b
   def dot(a: Tensor, b: Tensor): Tensor = a dot b
 
-  def pad(x: Tensor, padWidth: Array[Array[Int]], mode: PadMode) = {
+  def pad(x: Tensor, padWidth: Array[Array[Int]], mode: PadMode): Tensor = {
     val a = Nd4j.pad(x.array, padWidth, mode)
     new Tensor(a)
   }
+
+  def reshape(x: Tensor, shape: Array[Int]): Tensor = x.reshape(shape)
+  def reshape(x: Tensor, shape: Int*): Tensor = x.reshape(shape: _*)
+
+  def transpose(x: Tensor): Tensor = x.transpose()
+  def transpose(x: Tensor, axes: Int*): Tensor = x.transpose(axes: _*)
+  def transpose(x: Tensor, axes: Array[Int]): Tensor = x.transpose(axes)
+
+  def arrayEqual(t1: Tensor, t2: Tensor): Boolean = numsca.prod(t1 == t2) == 1
 
 }

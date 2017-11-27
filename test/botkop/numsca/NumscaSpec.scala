@@ -15,8 +15,7 @@ class NumscaSpec extends FlatSpec with Matchers {
     val x = ns.arange(6).reshape(1, 2, 3)
     val y = ns.transpose(x, 1, 0, 2)
     val z = ns.reshape(x, 2, 1, 3)
-    val b = y == z
-    assert(ns.prod(b) == 1.0)
+    assert(ns.arrayEqual(y, z))
   }
 
   // tests based on http://scipy-cookbook.readthedocs.io/items/Indexing.html
@@ -92,6 +91,47 @@ class NumscaSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "update over a single dimension" in {
+    val t = ta.copy()
+    t(2 :> 5) := -ns.ones(3)
+    val e1 =
+      Tensor(0.00, 1.00, -1.00, -1.00, -1.00, 5.00, 6.00, 7.00, 8.00, 9.00)
+    assert(ns.arrayEqual(t, e1))
+
+    an[IllegalStateException] should be thrownBy {
+      t(2 :> 5) := -ns.ones(4)
+    }
+
+    // this does not throw an exception !!!
+    /*
+    an[IllegalStateException] should be thrownBy {
+      t(2 :> 6) := -ns.ones(4).reshape(2, 2)
+    }
+     */
+
+    t(2 :> 5) := 33
+    assert(
+      ns.arrayEqual(
+        t,
+        Tensor(0.00, 1.00, 33.00, 33.00, 33.00, 5.00, 6.00, 7.00, 8.00, 9.00)))
+
+    t(2 :> 5) -= 1
+    assert(
+      ns.arrayEqual(
+        t,
+        Tensor(0.00, 1.00, 32.00, 32.00, 32.00, 5.00, 6.00, 7.00, 8.00, 9.00)))
+
+    t := -1
+    assert(
+      ns.arrayEqual(t,
+                    Tensor(-1.00, -1.00, -1.00, -1.00, -1.00, -1.00, -1.00,
+                      -1.00, -1.00, -1.00)))
+
+    val s = 3 :> -1
+    println(ta(:>, s))
+
+  }
+
   it should "broadcast with another tensor" in {
 
     // tests inspired by
@@ -155,9 +195,9 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     val observation = Tensor(111.0, 188.0)
     val codes = Tensor(
-      102.0, 203.0,  //
-      132.0, 193.0,  //
-      45.0, 155.0,  //
+      102.0, 203.0, //
+      132.0, 193.0, //
+      45.0, 155.0, //
       57.0, 173.0 //
     ).reshape(4, 2)
     val diff = codes - observation

@@ -1,7 +1,7 @@
 package botkop.numsca
 
-import org.scalatest.{FlatSpec, Matchers}
 import botkop.{numsca => ns}
+import org.scalatest.{FlatSpec, Matchers}
 
 import scala.language.postfixOps
 
@@ -88,9 +88,82 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     assert(ns.arrayEqual(ta(:>, 5 :>), Tensor(5, 6, 7, 8, 9)))
     assert(ns.arrayEqual(ta(:>, :>(5)), Tensor(0, 1, 2, 3, 4)))
+    assert(ns.arrayEqual(ta(:>, -3 :>), Tensor(7, 8, 9)))
 
-    // assert(ns.arrayEqual(ta(:>, -3 :>), Tensor(7, 8, 9)))
+  }
 
+  it should "broadcast with another tensor" in {
+
+    // tests inspired by
+    // https://docs.scipy.org/doc/numpy-1.13.0/user/basics.broadcasting.html
+    // http://scipy.github.io/old-wiki/pages/EricsBroadcastingDoc
+
+    def verify(shape1: Array[Int],
+               shape2: Array[Int],
+               expectedShape: Array[Int]) = {
+      val t1 = ns.ones(shape1)
+      val t2 = ns.ones(shape2)
+      val (s1, s2) = Ops.tbc(t1, t2)
+      assert(s1.shape().sameElements(s2.shape()))
+      assert(s1.shape().sameElements(expectedShape))
+    }
+
+    verify(Array(8, 1, 6, 1), Array(7, 1, 5), Array(8, 7, 6, 5))
+    verify(Array(256, 256, 3), Array(3), Array(256, 256, 3))
+    verify(Array(5, 4), Array(1), Array(5, 4))
+    verify(Array(15, 3, 5), Array(15, 1, 5), Array(15, 3, 5))
+    verify(Array(15, 3, 5), Array(3, 5), Array(15, 3, 5))
+    verify(Array(15, 3, 5), Array(3, 1), Array(15, 3, 5))
+
+    val x = ns.arange(4)
+    val xx = x.reshape(4, 1)
+    val y = ns.ones(5)
+    val z = ns.ones(3, 4)
+
+    an[IllegalArgumentException] should be thrownBy x + y
+
+    (xx + y).shape shouldBe Array(4, 5)
+    val s1 =
+      Tensor(
+        1, 1, 1, 1, 1, //
+        2, 2, 2, 2, 2, //
+        3, 3, 3, 3, 3, //
+        4, 4, 4, 4, 4 //
+      ).reshape(4, 5)
+    assert(ns.arrayEqual(xx + y, s1))
+
+    (x + z).shape shouldBe Array(3, 4)
+    val s2 =
+      Tensor(
+        1, 2, 3, 4, //
+        1, 2, 3, 4, //
+        1, 2, 3, 4 //
+      ).reshape(3, 4)
+    assert(ns.arrayEqual(x + z, s2))
+
+    // outer sum
+    val a = Tensor(0.0, 10.0, 20.0, 30.0).reshape(4, 1)
+    val b = Tensor(1.0, 2.0, 3.0)
+    val c = Tensor(
+      1.00, 2.00, 3.00, //
+      11.00, 12.00, 13.00, //
+      21.00, 22.00, 23.00, //
+      31.00, 32.00, 33.00 //
+    ).reshape(4, 3)
+
+    assert(ns.arrayEqual(a + b, c))
+
+    val observation = Tensor(111.0, 188.0)
+    val codes = Tensor(
+      102.0, 203.0,  //
+      132.0, 193.0,  //
+      45.0, 155.0,  //
+      57.0, 173.0 //
+    ).reshape(4, 2)
+    val diff = codes - observation
+    val dist = ns.sqrt(ns.sum(ns.square(diff), axis = -1))
+    val nearest = ns.argmin(dist).squeeze()
+    assert(nearest == 0.0)
   }
 
 }

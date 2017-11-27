@@ -58,11 +58,30 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def !=(d: Double): Tensor = new Tensor(array neq d, true)
 
   // todo when product of dim of other array = 1 then extract number iso broadcasting
-  def +(other: Tensor): Tensor = new Tensor(array add bc(other))
-  def -(other: Tensor): Tensor = new Tensor(array sub bc(other))
-  def *(other: Tensor): Tensor = new Tensor(array mul bc(other))
-  def /(other: Tensor): Tensor = new Tensor(array div bc(other))
-  def %(other: Tensor): Tensor = new Tensor(array fmod bc(other))
+  // def +(other: Tensor): Tensor = new Tensor(array add bc(other))
+  // def -(other: Tensor): Tensor = new Tensor(array sub bc(other))
+  // def *(other: Tensor): Tensor = new Tensor(array mul bc(other))
+  // def /(other: Tensor): Tensor = new Tensor(array div bc(other))
+  // def %(other: Tensor): Tensor = new Tensor(array fmod bc(other))
+  // def >(other: Tensor): Tensor = new Tensor(array gt bc(other), true)
+  // def <(other: Tensor): Tensor = new Tensor(array lt bc(other), true)
+  // def ==(other: Tensor): Tensor = new Tensor(array eq bc(other), true)
+  // def !=(other: Tensor): Tensor = new Tensor(array neq bc(other), true)
+
+  def +(other: Tensor): Tensor = Ops.add(this, other)
+  def -(other: Tensor): Tensor = Ops.sub(this, other)
+  def *(other: Tensor): Tensor = Ops.mul(this, other)
+  def /(other: Tensor): Tensor = Ops.div(this, other)
+  def %(other: Tensor): Tensor = Ops.mod(this, other)
+  def >(other: Tensor): Tensor = Ops.gt(this, other)
+  def <(other: Tensor): Tensor = Ops.lt(this, other)
+  def ==(other: Tensor): Tensor = Ops.eq(this, other)
+  def !=(other: Tensor): Tensor = Ops.neq(this, other)
+
+  /**
+    * broadcast argument tensor with shape of this tensor
+    */
+  private def bc(t: Tensor): INDArray = t.array.broadcast(shape: _*)
 
   def +=(t: Tensor): Unit = array addi bc(t)
   def -=(t: Tensor): Unit = array subi bc(t)
@@ -73,23 +92,10 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def :=(t: Tensor): Unit = array assign t.array
   def :=(d: Double): Unit = array assign d
 
-  def >(other: Tensor): Tensor = new Tensor(array gt bc(other), true)
-  def <(other: Tensor): Tensor = new Tensor(array lt bc(other), true)
-  def ==(other: Tensor): Tensor = new Tensor(array eq other.array, true)
-  def !=(other: Tensor): Tensor = new Tensor(array neq bc(other), true)
-
-  def maximum(other: Tensor): Tensor =
-    new Tensor(Transforms.max(this.array, bc(other)))
+  def maximum(other: Tensor): Tensor = Ops.max(this, other)
   def maximum(d: Double): Tensor = new Tensor(Transforms.max(this.array, d))
-  def minimum(other: Tensor): Tensor =
-    new Tensor(Transforms.min(this.array, bc(other)))
+  def minimum(other: Tensor): Tensor = Ops.min(this, other)
   def minimum(d: Double): Tensor = new Tensor(Transforms.min(this.array, d))
-
-  private def bc(other: Tensor): INDArray =
-    if (sameShape(other))
-      other.array
-    else
-      other.array.broadcast(shape: _*)
 
   def slice(i: Int): Tensor = new Tensor(array.slice(i))
   def slice(i: Int, dim: Int): Tensor = new Tensor(array.slice(i, dim))
@@ -109,18 +115,19 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
   def apply(ranges: NumscaRange*)(
       implicit tag: TypeTag[NumscaRange]): Tensor = {
+
+    def handleNegIndex(i: Int, shapeIndex: Int) =
+      if (i < 0) shape(shapeIndex) + i else i
+
     val indexes = ranges.zipWithIndex.map {
       case (nr, i) =>
         nr.to match {
+          case None if nr.from == 0 =>
+            NDArrayIndex.all()
           case None =>
-            if (nr.from == 0)
-              NDArrayIndex.all()
-            else
-              NDArrayIndex.interval(nr.from, shape(i))
-          case Some(n) if n < 0 =>
-            NDArrayIndex.interval(nr.from, shape(i) + n)
+            NDArrayIndex.interval(handleNegIndex(nr.from, i), shape(i))
           case Some(n) =>
-            NDArrayIndex.interval(nr.from, n)
+            NDArrayIndex.interval(handleNegIndex(nr.from, i), handleNegIndex(n, i))
         }
     }
     new Tensor(array.get(indexes: _*))
@@ -206,4 +213,21 @@ object Tensor {
   }
 
   def apply(data: Double*): Tensor = Tensor(data.toArray)
+
+  def bc(a1: INDArray, a2: INDArray): (INDArray, INDArray) =
+    if (a1.shape().sameElements(a2.shape())) {
+      (a1, a2)
+    } else {
+      if (a1.rank() != a2.rank()) {
+        val diff = math.abs(a1.rank() - a2.rank())
+        val extShape = Array.fill(diff)(1)
+        if (a1.rank() < a2.rank()) {
+          (a1.reshape(extShape ++ a1.shape: _*), a2)
+        } else {
+          (a1, a2.reshape(extShape ++ a2.shape: _*))
+        }
+      } else {
+        (a1, a2)
+      }
+    }
 }

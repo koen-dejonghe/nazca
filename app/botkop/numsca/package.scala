@@ -1,7 +1,8 @@
 package botkop
 
 import org.nd4j.linalg.api.iter.NdIndexIterator
-import org.nd4j.linalg.api.ops.impl.indexaccum.IAMax
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.api.ops.impl.indexaccum.{IAMax, IAMin}
 import org.nd4j.linalg.api.rng
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.factory.Nd4j.PadMode
@@ -47,7 +48,13 @@ package object numsca {
   def zeros(shape: Array[Int]): Tensor = zeros(shape: _*)
   def zerosLike(t: Tensor): Tensor = zeros(t.shape)
 
-  def ones(shape: Int*): Tensor = new Tensor(Nd4j.ones(shape: _*))
+  def ones(shape: Int*): Tensor = {
+    if (shape.length == 1)
+      // probably a bug in nd4j
+      new Tensor(Nd4j.ones(1 +: shape: _*))
+    else
+      new Tensor(Nd4j.ones(shape: _*))
+  }
   def ones(shape: Array[Int]): Tensor = ones(shape: _*)
 
   def randn(shape: Int*): Tensor = new Tensor(Nd4j.randn(shape.toArray))
@@ -101,8 +108,14 @@ package object numsca {
   def nditer(shape: Array[Int]): Iterator[Array[Int]] =
     new NdIndexIterator(shape: _*).asScala
 
+  def argmax(t: Tensor): Tensor =
+    new Tensor(Nd4j.getExecutioner.exec(new IAMax(t.array)))
   def argmax(t: Tensor, axis: Int): Tensor =
     new Tensor(Nd4j.getExecutioner.exec(new IAMax(t.array), axis))
+  def argmin(t: Tensor, axis: Int): Tensor =
+    new Tensor(Nd4j.getExecutioner.exec(new IAMin(t.array), axis))
+  def argmin(t: Tensor): Tensor =
+    new Tensor(Nd4j.getExecutioner.exec(new IAMin(t.array)))
 
   def round(t: Tensor): Tensor = new Tensor(Transforms.round(t.array))
   def ceil(t: Tensor): Tensor = new Tensor(Transforms.ceil(t.array))
@@ -130,5 +143,87 @@ package object numsca {
   def transpose(x: Tensor, axes: Array[Int]): Tensor = x.transpose(axes)
 
   def arrayEqual(t1: Tensor, t2: Tensor): Boolean = numsca.prod(t1 == t2) == 1
+
+  // ops between 2 tensors, with broadcasting
+  object Ops {
+
+    def add(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.add(ba2))
+    }
+
+    def sub(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.sub(ba2))
+    }
+
+    def mul(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.mul(ba2))
+    }
+
+    def div(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.div(ba2))
+    }
+
+    def mod(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.fmod(ba2))
+    }
+
+    def gt(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.gt(ba2))
+    }
+
+    def lt(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.lt(ba2))
+    }
+
+    def eq(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.eq(ba2))
+    }
+
+    def neq(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(ba1.neq(ba2))
+    }
+
+    def max(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(Transforms.max(ba1, ba2))
+    }
+
+    def min(t1: Tensor, t2: Tensor): Tensor = {
+      val (ba1, ba2) = tbc(t1, t2)
+      new Tensor(Transforms.min(ba1, ba2))
+    }
+
+    def bcShape(a1: INDArray, a2: INDArray): (INDArray, INDArray) =
+      if (a1.rank() != a2.rank()) {
+        val diff = math.abs(a1.rank() - a2.rank())
+        val extShape = Array.fill(diff)(1)
+        if (a1.rank() < a2.rank()) {
+          (a1.reshape(extShape ++ a1.shape: _*), a2)
+        } else {
+          (a1, a2.reshape(extShape ++ a2.shape: _*))
+        }
+      } else {
+        (a1, a2)
+      }
+
+    def abc(a1: INDArray, a2: INDArray): (INDArray, INDArray) = {
+      val (xa1, xa2) = bcShape(a1, a2)
+      val ba1 = xa1.broadcast(xa2.shape: _*)
+      val ba2 = xa2.broadcast(ba1.shape: _*)
+      (ba1, ba2)
+    }
+
+    def tbc(t1: Tensor, t2: Tensor): (INDArray, INDArray) =
+      abc(t1.array, t2.array)
+  }
 
 }

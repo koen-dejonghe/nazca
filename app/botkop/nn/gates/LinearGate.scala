@@ -52,7 +52,7 @@ class LinearGate(next: ActorRef, config: LinearConfig)
     case Backward(dz) if cache isDefined =>
       val (prev, a) = cache.get
 
-      val da = w.transpose.dot(dz)
+      val da = w.T.dot(dz)
       prev ! Backward(da)
 
       val m = a.shape(1)

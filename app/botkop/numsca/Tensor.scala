@@ -200,6 +200,8 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def sameShape(other: Tensor): Boolean = shape sameElements other.shape
   def sameElements(other: Tensor): Boolean = data sameElements other.data
 
+  def rank: Int = array.rank()
+
   override def toString: String = array.toString
 
   /* also returns a new array, so useless

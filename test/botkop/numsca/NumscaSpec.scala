@@ -261,4 +261,42 @@ class NumscaSpec extends FlatSpec with Matchers {
     println(r3)
 
   }
+
+  it should "do multi dim list-of-location indexing" in {
+
+    def multiIndex(t: Tensor, selection: Tensor*): Tensor = {
+      val rank = selection.head.shape(1)
+      require(selection.forall(s => s.shape.head == 1 && s.shape(1) == rank))
+
+      val data = (0 until rank).map { r =>
+        val idx = selection.map( s => s.array.getInt(0, r)).toArray
+        t.array.getFloat(idx)
+      }.toArray
+
+      Tensor(data).reshape(1, rank)
+    }
+
+    val a = ns.arange(6).reshape(3, 2) + 1
+    val s1 = Tensor(0, 1, 2)
+    val s2 = Tensor(0, 1, 0)
+
+    val r1 = multiIndex(a, s1, s2)
+    println(r1)
+
+    val s3 = Tensor(0, 0)
+    val s4 = Tensor(1, 1)
+
+    val r2 = multiIndex(a, s3, s4)
+    println(r2)
+
+    val b = ns.arange(12).reshape(4, 3) + 1
+    println(b)
+    val c = Tensor(0, 2, 0, 1)
+
+    println(multiIndex(b, arange(4), c))
+
+
+
+  }
+
 }

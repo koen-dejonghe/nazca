@@ -144,6 +144,24 @@ package object numsca {
 
   def arrayEqual(t1: Tensor, t2: Tensor): Boolean = numsca.prod(t1 == t2) == 1
 
+  def any(x: Tensor): Boolean = {
+    require(x.isBoolean)
+    sum(x) > 0
+  }
+
+  def any(x: Tensor, axis: Int): Tensor = {
+    throw new NotImplementedError()
+  }
+
+  def all(x: Tensor): Boolean = {
+    require(x.isBoolean)
+    prod(x) > 0
+  }
+
+  def all(x: Tensor, axis: Int): Tensor = {
+    throw new NotImplementedError()
+  }
+
   // ops between 2 tensors, with broadcasting
   object Ops {
 

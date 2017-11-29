@@ -1,6 +1,10 @@
 package botkop.numsca
 
 import botkop.{numsca => ns}
+import org.nd4j.linalg.api.iter.NdIndexIterator
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.indexing._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.language.postfixOps
@@ -128,7 +132,7 @@ class NumscaSpec extends FlatSpec with Matchers {
                       -1.00, -1.00, -1.00)))
 
     val s = 3 :> -1
-    println(ta(:>, s))
+    assert(ns.arrayEqual(ta(:>, s), Tensor(3.00, 4.00, 5.00, 6.00, 7.00, 8.00)))
 
   }
 
@@ -206,4 +210,55 @@ class NumscaSpec extends FlatSpec with Matchers {
     assert(nearest == 0.0)
   }
 
+  it should "do boolean indexing" in {
+    val c = ta < 5 && ta > 1
+    // c = [0.00,  0.00,  1.00,  1.00,  1.00,  0.00,  0.00,  0.00,  0.00,  0.00]
+    val d = ta(c)
+    assert(ns.arrayEqual(d, Tensor(2, 3, 4)))
+
+    val t = ta.copy()
+    // this does not work, beuhueueue
+    t(c) := -7 // has no effect, since selection is a new tensor, not a view
+    // but this does
+    t.put(c, -7)
+    assert(
+      ns.arrayEqual(
+        t,
+        Tensor(0.00, 1.00, -7.00, -7.00, -7.00, 5.00, 6.00, 7.00, 8.00, 9.00)))
+  }
+
+  it should "do multidimensional boolean indexing" in {
+    val c = tc(tc % 5 == 0)
+    assert(ns.arrayEqual(c, Tensor(0.00, 5.00, 10.00, 15.00, 20.00)))
+    assert(ns.any(tb < 5))
+    assert(!ns.all(tb < 5))
+
+    // stuff like this is not yet implemented
+    // np.any(B<5, axis=1)
+    // B[np.any(B<5, axis=1),:]
+    // c = np.any(C<5,axis=2)
+  }
+
+  it should "do list-of-location indexing" in {
+
+    def index(t: Tensor, selection: Tensor): Array[Float] = {
+      val ta = t.array
+      val ts = selection.array
+      ts.data().asInt().map(i => ta.getFloat(i))
+    }
+
+    val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
+    val idx = Tensor(3, 4, 1, 2, 2)
+    val r = Tensor(index(primes, idx)).shapeLike(idx)
+    println(r)
+
+
+    val r2 = Tensor(index(primes, tb)).shapeLike(tb)
+    println(r2)
+
+    val tp = primes.reshape(3, 3)
+    val r3 = Tensor(index(tp, tb)).shapeLike(tb)
+    println(r3)
+
+  }
 }

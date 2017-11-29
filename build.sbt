@@ -21,7 +21,8 @@ libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Tes
 // libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % akkaVersion
 // libraryDependencies += "com.typesafe.akka" %% "akka-remote" % akkaVersion
 
-libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
+// libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
+libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.9.1"
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"

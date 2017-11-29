@@ -4,7 +4,7 @@ import botkop.numsca
 import org.nd4j.linalg.api.iter.NdIndexIterator
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing.NDArrayIndex
+import org.nd4j.linalg.indexing.{INDArrayIndex, NDArrayIndex}
 import org.nd4j.linalg.ops.transforms.Transforms
 
 import scala.collection.JavaConverters._
@@ -38,15 +38,17 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def dot(other: Tensor) = new Tensor(array mmul other.array)
 
   def unary_- : Tensor = new Tensor(array mul -1)
-  def +(d: Double) = new Tensor(array add d)
-  def -(d: Double) = new Tensor(array sub d)
-  def *(d: Double) = new Tensor(array mul d)
-  def /(d: Double) = new Tensor(array div d)
-  def %(d: Double) = new Tensor(array fmod d)
+  def +(d: Double): Tensor = new Tensor(array add d)
+  def -(d: Double): Tensor = new Tensor(array sub d)
+  def *(d: Double): Tensor = new Tensor(array mul d)
+  def **(d: Double): Tensor = power(this, d)
+  def /(d: Double): Tensor = new Tensor(array div d)
+  def %(d: Double): Tensor = new Tensor(array fmod d)
 
   def +=(d: Double): Unit = array addi d
   def -=(d: Double): Unit = array subi d
   def *=(d: Double): Unit = array muli d
+  def **=(d: Double): Unit = array.assign(Transforms.pow(array, d))
   def /=(d: Double): Unit = array divi d
   def %=(d: Double): Unit = array fmodi d
 
@@ -77,6 +79,16 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def <(other: Tensor): Tensor = Ops.lt(this, other)
   def ==(other: Tensor): Tensor = Ops.eq(this, other)
   def !=(other: Tensor): Tensor = Ops.neq(this, other)
+
+  def &&(other: Tensor): Tensor = {
+    require(this.isBoolean && other.isBoolean)
+    new Tensor(this.array.mul(other.array), true)
+  }
+
+  def ||(other: Tensor): Tensor = {
+    require(this.isBoolean && other.isBoolean)
+    new Tensor(Transforms.max(this.array.add(other.array), 1.0), true)
+  }
 
   /**
     * broadcast argument tensor with shape of this tensor
@@ -119,7 +131,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     def handleNegIndex(i: Int, shapeIndex: Int) =
       if (i < 0) shape(shapeIndex) + i else i
 
-    val indexes = ranges.zipWithIndex.map {
+    val indexes: Seq[INDArrayIndex] = ranges.zipWithIndex.map {
       case (nr, i) =>
         nr.to match {
           case None if nr.from == 0 =>
@@ -127,7 +139,8 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
           case None =>
             NDArrayIndex.interval(handleNegIndex(nr.from, i), shape(i))
           case Some(n) =>
-            NDArrayIndex.interval(handleNegIndex(nr.from, i), handleNegIndex(n, i))
+            NDArrayIndex.interval(handleNegIndex(nr.from, i),
+                                  handleNegIndex(n, i))
         }
     }
     new Tensor(array.get(indexes: _*))
@@ -140,9 +153,10 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     * @return
     */
   def apply(t: Tensor): Tensor = {
-    val indexes: Array[Array[Int]] = indexBy(t)
+    val indexes = indexBy(t)
     val newData = indexes.map(array getFloat)
-    Tensor(newData).reshape(t.shape)
+    val s = Tensor(newData)
+    if (t.isBoolean) s else s.reshape(t.shape)
   }
 
   private def indexByBooleanTensor(t: Tensor): Array[Array[Int]] = {
@@ -214,20 +228,4 @@ object Tensor {
 
   def apply(data: Double*): Tensor = Tensor(data.toArray)
 
-  def bc(a1: INDArray, a2: INDArray): (INDArray, INDArray) =
-    if (a1.shape().sameElements(a2.shape())) {
-      (a1, a2)
-    } else {
-      if (a1.rank() != a2.rank()) {
-        val diff = math.abs(a1.rank() - a2.rank())
-        val extShape = Array.fill(diff)(1)
-        if (a1.rank() < a2.rank()) {
-          (a1.reshape(extShape ++ a1.shape: _*), a2)
-        } else {
-          (a1, a2.reshape(extShape ++ a2.shape: _*))
-        }
-      } else {
-        (a1, a2)
-      }
-    }
 }

@@ -149,14 +149,37 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   /**
     * Slice by tensor
     * Note this does not return a view, but a new copy of the data!
-    * @param t tensor to slice by
-    * @return
     */
+  /*
   def apply(t: Tensor): Tensor = {
     val indexes = indexBy(t)
     val newData = indexes.map(array getFloat)
     val s = Tensor(newData)
     if (t.isBoolean) s else s.reshape(t.shape)
+  }
+   */
+
+  def apply(selection: Tensor*)(implicit dummy: Int = 0): Tensor = {
+    val indexes = selectIndexes(selection)
+    val newData = indexes.map(array getFloat)
+    Tensor(newData)
+  }
+
+  private def selectIndexes(selection: Seq[Tensor]): Array[Array[Int]] = {
+    if (selection.length == 1 && selection.head.isBoolean) {
+      indexByBooleanTensor(selection.head)
+    } else {
+      multiIndex(selection)
+    }
+  }
+
+  private def multiIndex(selection: Seq[Tensor]): Array[Array[Int]] = {
+    val rank = selection.head.shape(1)
+    require(selection.forall(s => s.shape.head == 1 && s.shape(1) == rank))
+
+    (0 until rank).map { r =>
+      selection.map(s => s.array.getInt(0, r)).toArray
+    }.toArray
   }
 
   private def indexByBooleanTensor(t: Tensor): Array[Array[Int]] = {
@@ -168,6 +191,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     } toArray
   }
 
+  /*
   private def indexByTensor(t: Tensor): Array[Array[Int]] = {
     require(shape.length == t.shape.length)
     require(t.shape.last == 1)
@@ -181,13 +205,14 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
   private def indexBy(t: Tensor): Array[Array[Int]] =
     if (t.isBoolean) indexByBooleanTensor(t) else indexByTensor(t)
+   */
 
-  def put(index: Int*)(d: Double): Unit =
-    put(index.toArray, d)
+  // def put(index: Int*)(d: Double): Unit = put(index.toArray, d)
 
   def put(index: Array[Int], d: Double): Unit =
     array.put(NDArrayIndex.indexesFor(index: _*), d)
 
+  /*
   def put(t: Tensor, d: Double): Unit =
     indexBy(t).foreach(ix => array.putScalar(ix, d))
 
@@ -196,6 +221,20 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
   def put(t: Tensor, f: (Array[Int], Double) => Double): Unit =
     indexBy(t).foreach(ix => array.putScalar(ix, f(ix, array.getFloat(ix))))
+   */
+
+  def put(d: Double)(selection: Tensor*): Unit =
+    selectIndexes(selection).foreach(ix => array.putScalar(ix, d))
+
+  def put(f: (Double) => Double)(selection: Tensor*): Unit =
+    selectIndexes(selection).foreach { ix =>
+      array.putScalar(ix, f(array.getFloat(ix)))
+    }
+
+  def put(f: (Array[Int], Double) => Double)(selection: Tensor*): Unit =
+    selectIndexes(selection).foreach { ix =>
+      array.putScalar(ix, f(ix, array.getFloat(ix)))
+    }
 
   def sameShape(other: Tensor): Boolean = shape sameElements other.shape
   def sameElements(other: Tensor): Boolean = data sameElements other.data

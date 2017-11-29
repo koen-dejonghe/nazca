@@ -1,6 +1,6 @@
 package botkop.nn.costs
 
-import botkop.numsca
+import botkop.{numsca => ns}
 import botkop.numsca.Tensor
 
 case object Softmax extends Cost {
@@ -9,15 +9,16 @@ case object Softmax extends Cost {
     val x = xt.T
     val y = yt.T
 
-    val shiftedLogits = x - numsca.max(x, axis = 1)
-    val z = numsca.sum(numsca.exp(shiftedLogits), axis = 1)
-    val logProbs = shiftedLogits - numsca.log(z)
-    val probs = numsca.exp(logProbs)
+    val shiftedLogits = x - ns.max(x, axis = 1)
+    val z = ns.sum(ns.exp(shiftedLogits), axis = 1)
+    val logProbs = shiftedLogits - ns.log(z)
+    val probs = ns.exp(logProbs)
     val n = x.shape(0)
-    val loss = -numsca.sum(logProbs(y)) / n
+    val loss = -ns.sum(logProbs(y)) / n
 
     val dx = probs
-    dx.put(y, _ - 1)
+    // dx.put(y, _ - 1)
+    dx.put(_ - 1)(ns.arange(n), y)
     dx /= n
 
     (loss, dx.T)

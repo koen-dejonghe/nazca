@@ -1,10 +1,6 @@
 package botkop.numsca
 
 import botkop.{numsca => ns}
-import org.nd4j.linalg.api.iter.NdIndexIterator
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.indexing._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.language.postfixOps
@@ -75,6 +71,9 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     // turn into a column vector
     val a0 = ta.copy().reshape(10, 1)
+
+
+    // todo: this is extremely slow
 
     // A[1:]
     val a1 = a0(1 :>)
@@ -220,7 +219,7 @@ class NumscaSpec extends FlatSpec with Matchers {
     // this does not work, beuhueueue
     t(c) := -7 // has no effect, since selection is a new tensor, not a view
     // but this does
-    t.put(c, -7)
+    t.put(-7)(c)
     assert(
       ns.arrayEqual(
         t,
@@ -294,8 +293,6 @@ class NumscaSpec extends FlatSpec with Matchers {
     val c = Tensor(0, 2, 0, 1)
 
     println(multiIndex(b, arange(4), c))
-
-
 
   }
 

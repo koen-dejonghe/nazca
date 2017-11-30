@@ -14,7 +14,7 @@ case object Softmax extends Cost {
     val logProbs = shiftedLogits - ns.log(z)
     val probs = ns.exp(logProbs)
     val n = x.shape(0)
-    val loss = -ns.sum(logProbs(y)) / n
+    val loss = -ns.sum(logProbs(ns.arange(n), y)) / n
 
     val dx = probs
     // dx.put(y, _ - 1)

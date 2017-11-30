@@ -1,6 +1,5 @@
 package botkop.numsca
 
-import botkop.numsca
 import org.nd4j.linalg.api.iter.NdIndexIterator
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
@@ -58,17 +57,6 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def <=(d: Double): Tensor = new Tensor(array lte d, true)
   def ==(d: Double): Tensor = new Tensor(array eq d, true)
   def !=(d: Double): Tensor = new Tensor(array neq d, true)
-
-  // todo when product of dim of other array = 1 then extract number iso broadcasting
-  // def +(other: Tensor): Tensor = new Tensor(array add bc(other))
-  // def -(other: Tensor): Tensor = new Tensor(array sub bc(other))
-  // def *(other: Tensor): Tensor = new Tensor(array mul bc(other))
-  // def /(other: Tensor): Tensor = new Tensor(array div bc(other))
-  // def %(other: Tensor): Tensor = new Tensor(array fmod bc(other))
-  // def >(other: Tensor): Tensor = new Tensor(array gt bc(other), true)
-  // def <(other: Tensor): Tensor = new Tensor(array lt bc(other), true)
-  // def ==(other: Tensor): Tensor = new Tensor(array eq bc(other), true)
-  // def !=(other: Tensor): Tensor = new Tensor(array neq bc(other), true)
 
   def +(other: Tensor): Tensor = Ops.add(this, other)
   def -(other: Tensor): Tensor = Ops.sub(this, other)
@@ -150,36 +138,40 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     * Slice by tensor
     * Note this does not return a view, but a new copy of the data!
     */
-  /*
-  def apply(t: Tensor): Tensor = {
-    val indexes = indexBy(t)
-    val newData = indexes.map(array getFloat)
-    val s = Tensor(newData)
-    if (t.isBoolean) s else s.reshape(t.shape)
-  }
-   */
 
   def apply(selection: Tensor*)(implicit dummy: Int = 0): Tensor = {
-    val indexes = selectIndexes(selection)
+    val (indexes, newShape) = selectIndexes(selection)
     val newData = indexes.map(array getFloat)
-    Tensor(newData)
+    val t = Tensor(newData)
+    if (newShape.isDefined) t.reshape(newShape.get) else t
   }
 
-  private def selectIndexes(selection: Seq[Tensor]): Array[Array[Int]] = {
-    if (selection.length == 1 && selection.head.isBoolean) {
-      indexByBooleanTensor(selection.head)
+  private def selectIndexes(
+      selection: Seq[Tensor]): (Array[Array[Int]], Option[Array[Int]]) = {
+    if (selection.length == 1) {
+      if (selection.head.isBoolean) {
+        (indexByBooleanTensor(selection.head), None)
+      } else if (rank == 2 && shape.head == 1) {
+        (indexByTensor(selection.head), Some(selection.head.shape))
+      } else {
+        throw new NotImplementedError()
+      }
     } else {
-      multiIndex(selection)
+      (multiIndex(selection), None)
     }
   }
 
   private def multiIndex(selection: Seq[Tensor]): Array[Array[Int]] = {
-    val rank = selection.head.shape(1)
-    require(selection.forall(s => s.shape.head == 1 && s.shape(1) == rank))
+    // broadcast selection to same shape
+    val ts: Seq[INDArray] = Ops.tbc(selection: _*)
+
+    val rank = ts.head.shape()(1)
+    require(ts.forall(s => s.shape().head == 1 && s.shape()(1) == rank))
 
     (0 until rank).map { r =>
-      selection.map(s => s.array.getInt(0, r)).toArray
+      ts.map(s => s.getInt(0, r)).toArray
     }.toArray
+
   }
 
   private def indexByBooleanTensor(t: Tensor): Array[Array[Int]] = {
@@ -191,48 +183,23 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     } toArray
   }
 
-  /*
   private def indexByTensor(t: Tensor): Array[Array[Int]] = {
-    require(shape.length == t.shape.length)
-    require(t.shape.last == 1)
-    require(shape.init sameElements t.shape.init)
-
-    numsca.nditer(t).toArray.map { ii: Array[Int] =>
-      val v = t.array.getInt(ii: _*)
-      ii.init :+ v
-    }
+    t.array.data().asInt().map(i => Array(0, i))
   }
-
-  private def indexBy(t: Tensor): Array[Array[Int]] =
-    if (t.isBoolean) indexByBooleanTensor(t) else indexByTensor(t)
-   */
-
-  // def put(index: Int*)(d: Double): Unit = put(index.toArray, d)
 
   def put(index: Array[Int], d: Double): Unit =
     array.put(NDArrayIndex.indexesFor(index: _*), d)
 
-  /*
-  def put(t: Tensor, d: Double): Unit =
-    indexBy(t).foreach(ix => array.putScalar(ix, d))
-
-  def put(t: Tensor, f: (Double) => Double): Unit =
-    indexBy(t).foreach(ix => array.putScalar(ix, f(array.getFloat(ix))))
-
-  def put(t: Tensor, f: (Array[Int], Double) => Double): Unit =
-    indexBy(t).foreach(ix => array.putScalar(ix, f(ix, array.getFloat(ix))))
-   */
-
   def put(d: Double)(selection: Tensor*): Unit =
-    selectIndexes(selection).foreach(ix => array.putScalar(ix, d))
+    selectIndexes(selection)._1.foreach(ix => array.putScalar(ix, d))
 
   def put(f: (Double) => Double)(selection: Tensor*): Unit =
-    selectIndexes(selection).foreach { ix =>
+    selectIndexes(selection)._1.foreach { ix =>
       array.putScalar(ix, f(array.getFloat(ix)))
     }
 
   def put(f: (Array[Int], Double) => Double)(selection: Tensor*): Unit =
-    selectIndexes(selection).foreach { ix =>
+    selectIndexes(selection)._1.foreach { ix =>
       array.putScalar(ix, f(ix, array.getFloat(ix)))
     }
 

@@ -72,7 +72,6 @@ class NumscaSpec extends FlatSpec with Matchers {
     // turn into a column vector
     val a0 = ta.copy().reshape(10, 1)
 
-
     // todo: this is extremely slow
 
     // A[1:]
@@ -146,7 +145,7 @@ class NumscaSpec extends FlatSpec with Matchers {
                expectedShape: Array[Int]) = {
       val t1 = ns.ones(shape1)
       val t2 = ns.ones(shape2)
-      val (s1, s2) = Ops.tbc(t1, t2)
+      val Seq(s1, s2) = Ops.tbc(t1, t2)
       assert(s1.shape().sameElements(s2.shape()))
       assert(s1.shape().sameElements(expectedShape))
     }
@@ -207,6 +206,11 @@ class NumscaSpec extends FlatSpec with Matchers {
     val dist = ns.sqrt(ns.sum(ns.square(diff), axis = -1))
     val nearest = ns.argmin(dist).squeeze()
     assert(nearest == 0.0)
+
+    // also test same shape
+    val t1 = ns.arange(9).reshape(3, 3)
+    val t2 = t1 + t1
+    assert(ns.arrayEqual(t2, t1 * 2))
   }
 
   it should "do boolean indexing" in {
@@ -215,6 +219,10 @@ class NumscaSpec extends FlatSpec with Matchers {
     val d = ta(c)
     assert(ns.arrayEqual(d, Tensor(2, 3, 4)))
 
+  }
+
+  it should "update with boolean indexing along a single dimension" in {
+    val c = ta < 5 && ta > 1
     val t = ta.copy()
     // this does not work, beuhueueue
     t(c) := -7 // has no effect, since selection is a new tensor, not a view
@@ -238,61 +246,86 @@ class NumscaSpec extends FlatSpec with Matchers {
     // c = np.any(C<5,axis=2)
   }
 
+  it should "update with boolean indexing along multiple dimensions" in {
+    val c = tb < 5 && tb > 1
+    val t1 = tb.copy()
+    t1.put(-7)(c)
+
+    assert(
+      ns.arrayEqual(t1, Tensor(0, 1, -7, -7, -7, 5, 6, 7, 8).reshape(3, 3)))
+
+    val t2 = tb.copy()
+    t2.put(_ + 10)(c)
+    println(t2)
+    assert(
+      ns.arrayEqual(t2, Tensor(0, 1, 12, 13, 14, 5, 6, 7, 8).reshape(3, 3)))
+
+    val t3 = tb.copy()
+    t3.put((ix, d) => { d - t3(ix).squeeze() })(c)
+    assert(ns.arrayEqual(t3, Tensor(0, 1, 0, 0, 0, 5, 6, 7, 8).reshape(3, 3)))
+  }
+
   it should "do list-of-location indexing" in {
-
-    def index(t: Tensor, selection: Tensor): Array[Float] = {
-      val ta = t.array
-      val ts = selection.array
-      ts.data().asInt().map(i => ta.getFloat(i))
-    }
-
     val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
     val idx = Tensor(3, 4, 1, 2, 2)
     val r = primes(idx)
-    assert(ns.arrayEqual(r, Tensor(7.00,  11.00,  3.00,  5.00,  5.00)))
+    println(r)
+    assert(ns.arrayEqual(r, Tensor(7.00, 11.00, 3.00, 5.00, 5.00)))
 
-    // val r2 = Tensor(index(primes, tb)).shapeLike(tb)
     val r2 = primes(tb)
+    val e2 = Tensor(
+      2.00, 3.00, 5.00, //
+      7.00, 11.00, 13.00, //
+      17.00, 19.00, 23.00 //
+    ).reshape(3, 3)
     println(r2)
+    assert(ns.arrayEqual(r2, e2))
 
     val tp = primes.reshape(3, 3)
-    val r3 = Tensor(index(tp, tb)).shapeLike(tb)
-    ///println(r3)
+    a[NotImplementedError] should be thrownBy tp(tb)
+  }
 
+  it should "update along a single dimension" in {
+    val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
+    val idx = Tensor(3, 4, 1, 2, 2)
+    primes.put(0)(idx)
+    assert(ns.arrayEqual(primes, Tensor(2.00, 0.00, 0.00, 0.00, 0.00, 13.00, 17.00, 19.00, 23.00)))
   }
 
   it should "do multi dim list-of-location indexing" in {
-
-    def multiIndex(t: Tensor, selection: Tensor*): Tensor = {
-      val rank = selection.head.shape(1)
-      require(selection.forall(s => s.shape.head == 1 && s.shape(1) == rank))
-
-      val data = (0 until rank).map { r =>
-        val idx = selection.map( s => s.array.getInt(0, r)).toArray
-        t.array.getFloat(idx)
-      }.toArray
-
-      Tensor(data).reshape(1, rank)
-    }
-
     val a = ns.arange(6).reshape(3, 2) + 1
     val s1 = Tensor(0, 1, 2)
     val s2 = Tensor(0, 1, 0)
-
-    val r1 = multiIndex(a, s1, s2)
-    println(r1)
+    val r1 = a(s1, s2)
+    assert(ns.arrayEqual(r1, Tensor(1, 4, 5)))
 
     val s3 = Tensor(0, 0)
     val s4 = Tensor(1, 1)
-
-    val r2 = multiIndex(a, s3, s4)
-    println(r2)
+    val r2 = a(s3, s4)
+    assert(ns.arrayEqual(r2, Tensor(2, 2)))
 
     val b = ns.arange(12).reshape(4, 3) + 1
-    println(b)
     val c = Tensor(0, 2, 0, 1)
+    val r3 = b(arange(4), c)
+    assert(ns.arrayEqual(r3, Tensor(1, 6, 7, 11)))
 
-    println(multiIndex(b, arange(4), c))
+    val y = ns.arange(35).reshape(5, 7)
+    val r4 = y(Tensor(0, 2, 4), Tensor(0, 1, 2))
+    assert(ns.arrayEqual(r4, Tensor(0, 15, 30)))
+
+    // broadcast selection
+    val r5 = y(Tensor(0, 2, 4), Tensor(1))
+    assert(ns.arrayEqual(r5, Tensor(1, 15, 29)))
+  }
+
+  it should "update along mutliple dimensions" in {
+    val a = ns.arange(6).reshape(3, 2) + 1
+    val s1 = Tensor(1, 1, 2)
+    val s2 = Tensor(0, 1, 0)
+
+    a.put(0)(s1, s2)
+
+    assert(ns.arrayEqual(a, Tensor(1, 2, 0, 0, 0, 6).reshape(3, 2)))
 
   }
 

@@ -149,99 +149,103 @@ package object numsca {
     sum(x) > 0
   }
 
+  /*
   def any(x: Tensor, axis: Int): Tensor = {
     throw new NotImplementedError()
   }
+   */
 
   def all(x: Tensor): Boolean = {
     require(x.isBoolean)
     prod(x) > 0
   }
 
+  /*
   def all(x: Tensor, axis: Int): Tensor = {
     throw new NotImplementedError()
   }
+   */
 
   // ops between 2 tensors, with broadcasting
   object Ops {
 
     def add(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.add(ba2))
     }
 
     def sub(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.sub(ba2))
     }
 
     def mul(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.mul(ba2))
     }
 
     def div(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.div(ba2))
     }
 
     def mod(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.fmod(ba2))
     }
 
     def gt(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.gt(ba2))
     }
 
     def lt(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.lt(ba2))
     }
 
     def eq(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.eq(ba2))
     }
 
     def neq(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(ba1.neq(ba2))
     }
 
     def max(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(Transforms.max(ba1, ba2))
     }
 
     def min(t1: Tensor, t2: Tensor): Tensor = {
-      val (ba1, ba2) = tbc(t1, t2)
+      val Seq(ba1, ba2) = tbc(t1, t2)
       new Tensor(Transforms.min(ba1, ba2))
     }
 
-    def bcShape(a1: INDArray, a2: INDArray): (INDArray, INDArray) =
-      if (a1.rank() != a2.rank()) {
-        val diff = math.abs(a1.rank() - a2.rank())
+    def prepareShapeForBroadcast(sa: Seq[INDArray]): Seq[INDArray] = {
+      val maxRank = sa.map(_.rank()).max
+      sa.map { a =>
+        val diff = maxRank - a.rank()
         val extShape = Array.fill(diff)(1)
-        if (a1.rank() < a2.rank()) {
-          (a1.reshape(extShape ++ a1.shape: _*), a2)
-        } else {
-          (a1, a2.reshape(extShape ++ a2.shape: _*))
-        }
-      } else {
-        (a1, a2)
+        a.reshape(extShape ++ a.shape(): _*)
       }
-
-    def abc(a1: INDArray, a2: INDArray): (INDArray, INDArray) = {
-      val (xa1, xa2) = bcShape(a1, a2)
-      val ba1 = xa1.broadcast(xa2.shape: _*)
-      val ba2 = xa2.broadcast(ba1.shape: _*)
-      (ba1, ba2)
     }
 
-    def tbc(t1: Tensor, t2: Tensor): (INDArray, INDArray) =
-      abc(t1.array, t2.array)
+    def broadcastArrays(sa: Seq[INDArray]): Seq[INDArray] = {
+      val xa = prepareShapeForBroadcast(sa)
+      val rank = xa.head.rank()
+      val finalShape: Array[Int] =
+        xa.map(_.shape()).foldLeft(Array.fill(rank)(0)) {
+          case (shp, acc) =>
+            shp.zip(acc).map { case (a, b) => math.max(a, b) }
+        }
+      xa.map(a => a.broadcast(finalShape: _*))
+    }
+
+    def tbc(ts: Tensor*): Seq[INDArray] = broadcastArrays(ts.map(_.array))
+
   }
 
 }

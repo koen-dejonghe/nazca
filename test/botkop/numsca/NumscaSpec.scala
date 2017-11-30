@@ -248,16 +248,16 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
     val idx = Tensor(3, 4, 1, 2, 2)
-    val r = Tensor(index(primes, idx)).shapeLike(idx)
-    println(r)
+    val r = primes(idx)
+    assert(ns.arrayEqual(r, Tensor(7.00,  11.00,  3.00,  5.00,  5.00)))
 
-
-    val r2 = Tensor(index(primes, tb)).shapeLike(tb)
+    // val r2 = Tensor(index(primes, tb)).shapeLike(tb)
+    val r2 = primes(tb)
     println(r2)
 
     val tp = primes.reshape(3, 3)
     val r3 = Tensor(index(tp, tb)).shapeLike(tb)
-    println(r3)
+    ///println(r3)
 
   }
 

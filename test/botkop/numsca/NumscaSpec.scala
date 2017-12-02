@@ -94,14 +94,11 @@ class NumscaSpec extends FlatSpec with Matchers {
     // A[1:] - A[:-1]
     val a3 = a1 - a2
 
-    assert(
-      a3.data sameElements Array(1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
-        1.00))
+    assert(ns.arrayEqual(a3, Tensor(1, 1, 1, 1, 1, 1, 1, 1, 1)))
 
     assert(ns.arrayEqual(ta(:>, 5 :>), Tensor(5, 6, 7, 8, 9)))
     assert(ns.arrayEqual(ta(:>, :>(5)), Tensor(0, 1, 2, 3, 4)))
     assert(ns.arrayEqual(ta(:>, -3 :>), Tensor(7, 8, 9)))
-
   }
 
   it should "update over a single dimension" in {
@@ -256,14 +253,12 @@ class NumscaSpec extends FlatSpec with Matchers {
   it should "update with boolean indexing along multiple dimensions" in {
     val c = tb < 5 && tb > 1
     val t1 = tb.copy()
-    // t1.put(-7)(c)
     t1(c) := -7
 
     assert(
       ns.arrayEqual(t1, Tensor(0, 1, -7, -7, -7, 5, 6, 7, 8).reshape(3, 3)))
 
     val t2 = tb.copy()
-    // t2.put(_ + 10)(c)
     t2(c) += 10
     println(t2)
     assert(
@@ -303,7 +298,6 @@ class NumscaSpec extends FlatSpec with Matchers {
   it should "update along a single dimension" in {
     val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
     val idx = Tensor(3, 4, 1, 2, 2)
-    // primes.put(0)(idx)
     primes(idx) := 0
     assert(
       ns.arrayEqual(
@@ -337,7 +331,7 @@ class NumscaSpec extends FlatSpec with Matchers {
     assert(ns.arrayEqual(r5, Tensor(1, 15, 29)))
   }
 
-  it should "update along mutliple dimensions" in {
+  it should "update along multiple dimensions" in {
     val a = ns.arange(6).reshape(3, 2) + 1
     val s1 = Tensor(1, 1, 2)
     val s2 = Tensor(0, 1, 0)
@@ -347,6 +341,63 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     a(s1, s2) += 3000
     assert(ns.arrayEqual(a, Tensor(1, 2, 3000, 3000, 3000, 6).reshape(3, 2)))
+  }
+
+  it should "do other calculations" in {
+    val a = tb.copy()
+    val s1 = Tensor(1, 1, 2)
+    val s2 = Tensor(0, 1, 0)
+
+    val c = a(s1, s2) + 3
+    assert(ns.arrayEqual(c, Tensor(6, 7, 9)))
+  }
+
+  it should "mimic the smallest neural network" in {
+
+    // see: https://iamtrask.github.io/2015/07/12/basic-python-network/
+
+    ns.rand.setSeed(231)
+
+    val x = ns
+      .array( //
+          0, 0, 1, //
+          1, 1, 1, //
+          1, 0, 1, //
+          0, 1, 1)
+      .reshape(4, 3)
+    val y = ns.array(0, 1, 1, 0).T
+    val w0 = 2 * ns.rand(3, 4) - 1
+    val w1 = 2 * ns.rand(4, 1) - 1
+
+    for (j <- 0 until 10000) {
+      val l1 = 1 / (1 + ns.exp(-ns.dot(x, w0)))
+      val l2 = 1 / (1 + ns.exp(-ns.dot(l1, w1)))
+
+      if (j % 1000 == 0) println(s"$j: $l2")
+
+      val l2_delta = (y - l2) * (l2 * (1 - l2))
+      val l1_delta = l2_delta.dot(w1.T) * (l1 * (1 - l1))
+      w1 += l1.T.dot(l2_delta)
+      w0 += x.T.dot(l1_delta)
+    }
+
+    def predict(x: Tensor): Tensor = {
+      val l1 = 1 / (1 + ns.exp(-ns.dot(x, w0)))
+      val l2 = 1 / (1 + ns.exp(-ns.dot(l1, w1)))
+      l2
+    }
+
+    val p1 = predict(Tensor(0, 0, 0))
+    assert(math.round(p1.squeeze()) == 0)
+
+    val p2 = predict(Tensor(0, 1, 0))
+    assert(math.round(p2.squeeze()) == 0)
+
+    val p3 = predict(Tensor(1, 0, 0))
+    assert(math.round(p3.squeeze()) == 1)
+
+    val p4 = predict(Tensor(1, 1, 0))
+    assert(math.round(p4.squeeze()) == 1)
 
   }
 

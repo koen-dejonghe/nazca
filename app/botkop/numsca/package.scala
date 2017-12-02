@@ -33,6 +33,7 @@ package object numsca {
 
   def rand: rng.Random = Nd4j.getRandom
 
+  def array(ds: Double*) = Tensor(ds:_*)
   def zeros(shape: Int*): Tensor = new Tensor(Nd4j.zeros(shape: _*))
   def zeros(shape: Array[Int]): Tensor = zeros(shape: _*)
   def zerosLike(t: Tensor): Tensor = zeros(t.shape)

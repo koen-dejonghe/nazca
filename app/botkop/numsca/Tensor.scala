@@ -8,7 +8,6 @@ import org.nd4j.linalg.ops.transforms.Transforms
 
 import scala.collection.JavaConverters._
 import scala.language.{implicitConversions, postfixOps}
-import scala.reflect.runtime.universe._
 
 class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     extends Serializable {
@@ -126,9 +125,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   /**
     * returns a view
     */
-  // todo: this is too slow!
-  def apply(ranges: NumscaRange*)(
-      implicit tag: TypeTag[NumscaRange]): Tensor = {
+  def apply(ranges: NumscaRange*)(implicit dummy: Int = 0): Tensor = {
 
     val indexes: Seq[INDArrayIndex] = ranges.zipWithIndex.map {
       case (nr, i) =>
@@ -144,19 +141,6 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     }
     new Tensor(array.get(indexes: _*))
   }
-
-  /**
-    * Slice by tensor
-    * Note this does not return a view, but a new copy of the data!
-    */
-  /*
-  def apply(selection: Tensor*)(implicit dummy: Int = 0): Tensor = {
-    val (indexes, newShape) = selectIndexes(selection)
-    val newData = indexes.map(ix => array.getDouble(ix: _*))
-    val t = Tensor(newData)
-    if (newShape.isDefined) t.reshape(newShape.get) else t
-  }
-   */
 
   def apply(selection: Tensor*): TensorSelection = {
     val (indexes, newShape) = selectIndexes(selection)
@@ -208,47 +192,6 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     t.array.data().asInt().map(i => Array(0, i))
   }
 
-  /*
-  def put(index: Array[Int], d: Double): Unit =
-    array.put(NDArrayIndex.indexesFor(index: _*), d)
-
-  def put(d: Double)(selection: Tensor*): Unit =
-    selectIndexes(selection)._1.foreach(ix => array.putScalar(ix, d))
-
-  def put(f: (Double) => Double)(selection: Tensor*): Unit =
-    selectIndexes(selection)._1.foreach { ix =>
-      array.putScalar(ix, f(array.getDouble(ix: _*)))
-    }
-
-  def put(f: (Array[Int], Double) => Double)(selection: Tensor*): Unit =
-    selectIndexes(selection)._1.foreach { ix =>
-      array.putScalar(ix, f(ix, array.getDouble(ix: _*)))
-    }
-
-  //---------------------------------
-  // goal: t(t<5) -= 1
-  //
-  // t.set(_ - 1).where(t<5)
-  case class TensorUpdate(update: (Array[Int], Double) => Double) {
-    def where(selection: Tensor*): Unit =
-      selectIndexes(selection)._1.foreach { ix =>
-        array.putScalar(ix, update(ix, array.getDouble(ix: _*)))
-      }
-  }
-
-  def set(d: Double) = TensorUpdate((_, _) => d)
-  def set(f: (Double) => Double) = TensorUpdate((_, d) => f(d))
-  def set(f: (Array[Int], Double) => Double) = TensorUpdate(f)
-
-  //---------------------------------
-  def select(selection: Tensor*): TensorSelection = {
-    val (indexes, newShape) = selectIndexes(selection)
-    TensorSelection(this, indexes, newShape)
-  }
-
-  //---------------------------------
-   */
-
   def sameShape(other: Tensor): Boolean = shape sameElements other.shape
   def sameElements(other: Tensor): Boolean = data sameElements other.data
 
@@ -273,7 +216,6 @@ object Tensor {
 
   implicit def selectionToTensor(ts: TensorSelection): Tensor =
     ts.asTensor
-
 }
 
 case class TensorSelection(t: Tensor,

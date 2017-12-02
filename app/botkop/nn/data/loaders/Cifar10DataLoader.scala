@@ -55,7 +55,7 @@ class Cifar10DataLoader(mode: String,
       val x = Tensor(xData).reshape(batchSize, numFeatures)
       val y = Tensor(yData).reshape(batchSize, 1)
 
-      (x.transpose, y.transpose)
+      (x.T, y.T)
     }
   }
 

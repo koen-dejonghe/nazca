@@ -3,6 +3,8 @@ package botkop.numsca
 import botkop.{numsca => ns}
 import org.scalatest.{FlatSpec, Matchers}
 
+import ns.Tensor._
+
 import scala.language.postfixOps
 
 class NumscaSpec extends FlatSpec with Matchers {
@@ -59,6 +61,15 @@ class NumscaSpec extends FlatSpec with Matchers {
     assert(t.data sameElements Array(0, 1, 2, -5, 4, 5, 6, 7, 8, 9))
     t(0) += 7
     assert(t.data sameElements Array(7, 1, 2, -5, 4, 5, 6, 7, 8, 9))
+
+    val t2 = tb.copy()
+    val x = Array(2, 1)
+    t2(x) := -7
+    t2(1, 2) := -3
+    assert(
+      arrayEqual(t2,
+                 Tensor(0.00, 1.00, 2.00, 3.00, 4.00, -3.00, 6.00, -7.00,
+                   8.00).reshape(3, 3)))
   }
 
   it should "do operations array-wise" in {
@@ -218,16 +229,12 @@ class NumscaSpec extends FlatSpec with Matchers {
     // c = [0.00,  0.00,  1.00,  1.00,  1.00,  0.00,  0.00,  0.00,  0.00,  0.00]
     val d = ta(c)
     assert(ns.arrayEqual(d, Tensor(2, 3, 4)))
-
   }
 
   it should "update with boolean indexing along a single dimension" in {
     val c = ta < 5 && ta > 1
     val t = ta.copy()
-    // this does not work, beuhueueue
-    t(c) := -7 // has no effect, since selection is a new tensor, not a view
-    // but this does
-    t.put(-7)(c)
+    t(c) := -7
     assert(
       ns.arrayEqual(
         t,
@@ -249,27 +256,28 @@ class NumscaSpec extends FlatSpec with Matchers {
   it should "update with boolean indexing along multiple dimensions" in {
     val c = tb < 5 && tb > 1
     val t1 = tb.copy()
-    t1.put(-7)(c)
+    // t1.put(-7)(c)
+    t1(c) := -7
 
     assert(
       ns.arrayEqual(t1, Tensor(0, 1, -7, -7, -7, 5, 6, 7, 8).reshape(3, 3)))
 
     val t2 = tb.copy()
-    t2.put(_ + 10)(c)
+    // t2.put(_ + 10)(c)
+    t2(c) += 10
     println(t2)
     assert(
       ns.arrayEqual(t2, Tensor(0, 1, 12, 13, 14, 5, 6, 7, 8).reshape(3, 3)))
 
-    val t3 = tb.copy()
-    t3.put((ix, d) => { d - t3(ix).squeeze() })(c)
-    assert(ns.arrayEqual(t3, Tensor(0, 1, 0, 0, 0, 5, 6, 7, 8).reshape(3, 3)))
+    // val t3 = tb.copy()
+    // t3.put((ix, d) => { d - t3(ix).squeeze() })(c)
+    // assert(ns.arrayEqual(t3, Tensor(0, 1, 0, 0, 0, 5, 6, 7, 8).reshape(3, 3)))
   }
 
   it should "do list-of-location indexing" in {
     val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
     val idx = Tensor(3, 4, 1, 2, 2)
     val r = primes(idx)
-    println(r)
     assert(ns.arrayEqual(r, Tensor(7.00, 11.00, 3.00, 5.00, 5.00)))
 
     val r2 = primes(tb)
@@ -278,18 +286,29 @@ class NumscaSpec extends FlatSpec with Matchers {
       7.00, 11.00, 13.00, //
       17.00, 19.00, 23.00 //
     ).reshape(3, 3)
-    println(r2)
     assert(ns.arrayEqual(r2, e2))
 
     val tp = primes.reshape(3, 3)
     a[NotImplementedError] should be thrownBy tp(tb)
+
+    val numSamples = 4
+    val numClasses = 3
+    val x = ns.arange(numSamples * numClasses).reshape(numSamples, numClasses)
+    val y = Tensor(0, 1, 2, 1)
+    val z = x(ns.arange(numSamples), y)
+    assert(ns.arrayEqual(z, Tensor(0.00, 4.00, 8.00, 10.00)))
+
   }
 
   it should "update along a single dimension" in {
     val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
     val idx = Tensor(3, 4, 1, 2, 2)
-    primes.put(0)(idx)
-    assert(ns.arrayEqual(primes, Tensor(2.00, 0.00, 0.00, 0.00, 0.00, 13.00, 17.00, 19.00, 23.00)))
+    // primes.put(0)(idx)
+    primes(idx) := 0
+    assert(
+      ns.arrayEqual(
+        primes,
+        Tensor(2.00, 0.00, 0.00, 0.00, 0.00, 13.00, 17.00, 19.00, 23.00)))
   }
 
   it should "do multi dim list-of-location indexing" in {
@@ -323,9 +342,11 @@ class NumscaSpec extends FlatSpec with Matchers {
     val s1 = Tensor(1, 1, 2)
     val s2 = Tensor(0, 1, 0)
 
-    a.put(0)(s1, s2)
-
+    a(s1, s2) := 0
     assert(ns.arrayEqual(a, Tensor(1, 2, 0, 0, 0, 6).reshape(3, 2)))
+
+    a(s1, s2) += 3000
+    assert(ns.arrayEqual(a, Tensor(1, 2, 3000, 3000, 3000, 6).reshape(3, 2)))
 
   }
 

@@ -21,17 +21,6 @@ package object numsca {
     def /(t: Tensor): Tensor = numsca.power(t, -1) * d
   }
 
-  /*
-  case class NumscaRange(from: Int, to: Int)
-
-  def :> = NumscaRange(0, -1)
-
-  implicit class NumscaInt(i: Int) {
-    def :>(end: Int) = NumscaRange(i, end)
-    def :> = NumscaRange(i, -1)
-  }
-   */
-
   case class NumscaRange(from: Int, to: Option[Int])
 
   def :>(end: Int) = NumscaRange(0, Some(end))
@@ -224,7 +213,7 @@ package object numsca {
       new Tensor(Transforms.min(ba1, ba2))
     }
 
-    def prepareShapeForBroadcast(sa: Seq[INDArray]): Seq[INDArray] = {
+    def prepareShapesForBroadcast(sa: Seq[INDArray]): Seq[INDArray] = {
       val maxRank = sa.map(_.rank()).max
       sa.map { a =>
         val diff = maxRank - a.rank()
@@ -234,7 +223,7 @@ package object numsca {
     }
 
     def broadcastArrays(sa: Seq[INDArray]): Seq[INDArray] = {
-      val xa = prepareShapeForBroadcast(sa)
+      val xa = prepareShapesForBroadcast(sa)
       val rank = xa.head.rank()
       val finalShape: Array[Int] =
         xa.map(_.shape()).foldLeft(Array.fill(rank)(0)) {

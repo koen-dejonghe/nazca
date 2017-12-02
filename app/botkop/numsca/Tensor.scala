@@ -107,17 +107,28 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def squeeze(index: Int*): Double = array.getDouble(index: _*)
   def squeeze(index: Array[Int]): Double = squeeze(index: _*)
 
+  /**
+    * returns a view
+    */
   def apply(index: Int*): Tensor = {
     val ix = index.map(NDArrayIndex.point)
     new Tensor(array.get(ix: _*))
   }
+
+  /**
+    * returns a view
+    */
   def apply(index: Array[Int]): Tensor = apply(index: _*)
 
+  private def handleNegIndex(i: Int, shapeIndex: Int) =
+    if (i < 0) shape(shapeIndex) + i else i
+
+  /**
+    * returns a view
+    */
+  // todo: this is too slow!
   def apply(ranges: NumscaRange*)(
       implicit tag: TypeTag[NumscaRange]): Tensor = {
-
-    def handleNegIndex(i: Int, shapeIndex: Int) =
-      if (i < 0) shape(shapeIndex) + i else i
 
     val indexes: Seq[INDArrayIndex] = ranges.zipWithIndex.map {
       case (nr, i) =>
@@ -138,12 +149,18 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     * Slice by tensor
     * Note this does not return a view, but a new copy of the data!
     */
-
+  /*
   def apply(selection: Tensor*)(implicit dummy: Int = 0): Tensor = {
     val (indexes, newShape) = selectIndexes(selection)
-    val newData = indexes.map(array getFloat)
+    val newData = indexes.map(ix => array.getDouble(ix: _*))
     val t = Tensor(newData)
     if (newShape.isDefined) t.reshape(newShape.get) else t
+  }
+   */
+
+  def apply(selection: Tensor*): TensorSelection = {
+    val (indexes, newShape) = selectIndexes(selection)
+    TensorSelection(this, indexes, newShape)
   }
 
   private def selectIndexes(
@@ -162,11 +179,15 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   }
 
   private def multiIndex(selection: Seq[Tensor]): Array[Array[Int]] = {
+    require(selection.forall(s => s.shape.head == 1),
+            s"shapes must be [1, n] (was: ${selection.map(_.shape.toList)}")
+
     // broadcast selection to same shape
     val ts: Seq[INDArray] = Ops.tbc(selection: _*)
 
     val rank = ts.head.shape()(1)
-    require(ts.forall(s => s.shape().head == 1 && s.shape()(1) == rank))
+    require(ts.forall(s => s.shape()(1) == rank),
+            s"shapes must be of rank $rank (was ${ts.map(_.shape().toList)}")
 
     (0 until rank).map { r =>
       ts.map(s => s.getInt(0, r)).toArray
@@ -179,7 +200,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     require(t sameShape this)
 
     new NdIndexIterator(t.shape: _*).asScala.filterNot { ii: Array[Int] =>
-      t.array.getFloat(ii) == 0
+      t.array.getDouble(ii: _*) == 0
     } toArray
   }
 
@@ -187,6 +208,7 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
     t.array.data().asInt().map(i => Array(0, i))
   }
 
+  /*
   def put(index: Array[Int], d: Double): Unit =
     array.put(NDArrayIndex.indexesFor(index: _*), d)
 
@@ -195,13 +217,37 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
 
   def put(f: (Double) => Double)(selection: Tensor*): Unit =
     selectIndexes(selection)._1.foreach { ix =>
-      array.putScalar(ix, f(array.getFloat(ix)))
+      array.putScalar(ix, f(array.getDouble(ix: _*)))
     }
 
   def put(f: (Array[Int], Double) => Double)(selection: Tensor*): Unit =
     selectIndexes(selection)._1.foreach { ix =>
-      array.putScalar(ix, f(ix, array.getFloat(ix)))
+      array.putScalar(ix, f(ix, array.getDouble(ix: _*)))
     }
+
+  //---------------------------------
+  // goal: t(t<5) -= 1
+  //
+  // t.set(_ - 1).where(t<5)
+  case class TensorUpdate(update: (Array[Int], Double) => Double) {
+    def where(selection: Tensor*): Unit =
+      selectIndexes(selection)._1.foreach { ix =>
+        array.putScalar(ix, update(ix, array.getDouble(ix: _*)))
+      }
+  }
+
+  def set(d: Double) = TensorUpdate((_, _) => d)
+  def set(f: (Double) => Double) = TensorUpdate((_, d) => f(d))
+  def set(f: (Array[Int], Double) => Double) = TensorUpdate(f)
+
+  //---------------------------------
+  def select(selection: Tensor*): TensorSelection = {
+    val (indexes, newShape) = selectIndexes(selection)
+    TensorSelection(this, indexes, newShape)
+  }
+
+  //---------------------------------
+   */
 
   def sameShape(other: Tensor): Boolean = shape sameElements other.shape
   def sameElements(other: Tensor): Boolean = data sameElements other.data
@@ -209,17 +255,6 @@ class Tensor(val array: INDArray, val isBoolean: Boolean = false)
   def rank: Int = array.rank()
 
   override def toString: String = array.toString
-
-  /* also returns a new array, so useless
-  def apply(t: Tensor): Tensor = {
-    val ixs: Array[INDArray] = indexBy(t) map { ix: Array[Int] =>
-      val points = ix map NDArrayIndex.point
-      array.get(points: _*)
-    }
-    new Tensor(Nd4j.toFlattened(ixs.toSeq.asJava)).reshape(t.shape)
-  }
- */
-
 }
 
 object Tensor {
@@ -235,5 +270,30 @@ object Tensor {
   }
 
   def apply(data: Double*): Tensor = Tensor(data.toArray)
+
+  implicit def selectionToTensor(ts: TensorSelection): Tensor =
+    ts.asTensor
+
+}
+
+case class TensorSelection(t: Tensor,
+                           indexes: Array[Array[Int]],
+                           shape: Option[Array[Int]]) {
+
+  def asTensor: Tensor = {
+    val newData = indexes.map(ix => t.array.getDouble(ix: _*))
+    if (shape.isDefined)
+      Tensor(newData).reshape(shape.get)
+    else
+      Tensor(newData)
+  }
+
+  def :=(d: Double): Unit = indexes.foreach(t(_) := d)
+  def +=(d: Double): Unit = indexes.foreach(t(_) += d)
+  def -=(d: Double): Unit = indexes.foreach(t(_) -= d)
+  def *=(d: Double): Unit = indexes.foreach(t(_) *= d)
+  def /=(d: Double): Unit = indexes.foreach(t(_) /= d)
+  def %=(d: Double): Unit = indexes.foreach(t(_) %= d)
+  def **=(d: Double): Unit = indexes.foreach(t(_) **= d)
 
 }

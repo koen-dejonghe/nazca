@@ -4,8 +4,8 @@ import akka.actor.{Actor, ActorContext, ActorLogging, ActorRef, Props}
 import akka.cluster.pubsub.DistributedPubSub
 import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import botkop.nn.costs.Cost
-import botkop.numsca
-import botkop.numsca.Tensor
+import botkop.{numsca => ns}
+import ns.Tensor
 import play.api.libs.json.{Format, Json}
 
 class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
@@ -22,8 +22,8 @@ class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
   def accept(i: Int = 0): Receive = {
 
     case Forward(al, y) =>
-      val (c, dal) = cost.costFunction(al, y)
-      sender() ! Backward(dal)
+      val (c, dal) = cost.costFunction(al.T, y)
+      sender() ! Backward(dal.T)
 
       if (i % 10 == 0) {
         mediator ! Publish("monitor", CostLogEntry("train", i, c))
@@ -31,7 +31,7 @@ class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
       context become accept(i + 1)
 
     case Eval(source, id, x, y) =>
-      val (c, _) = cost.costFunction(x, y)
+      val (c, _) = cost.costFunction(x.T, y)
       val acc = accuracy(x, y)
       sender ! EvalEntry(source, id, c, acc)
 
@@ -42,8 +42,8 @@ class OutputGate(config: OutputConfig) extends Actor with ActorLogging {
 
   def accuracy(x: Tensor, y: Tensor): Double = {
     val m = x.shape(1)
-    val p = numsca.argmax(x, 0)
-    numsca.sum(p == y) / m
+    val p = ns.argmax(x, 0)
+    ns.sum(p == y) / m
   }
 
 }

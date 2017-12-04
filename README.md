@@ -23,7 +23,7 @@ for (j <- 0 until 60000) {
 ## Importing numsca
 ```scala
 import botkop.{numsca => ns}
-import ns.Tensor
+import ns._
 import ns.Tensor._
 ```
 
@@ -102,3 +102,34 @@ scala> t
 res18: botkop.numsca.Tensor = [7.00,  1.00,  2.00,  -5.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 ```
 
+Array wise
+```scala
+scala> val a2 = 2 * ta
+val a2 = 2 * ta
+a2: botkop.numsca.Tensor = [0.00,  2.00,  4.00,  6.00,  8.00,  10.00,  12.00,  14.00,  16.00,  18.00]
+```
+
+## Slicing
+Single dimension
+
+```scala
+scala> val a0 = ta.copy().reshape(10, 1)
+val a0 = ta.copy().reshape(10, 1)
+a0: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> val a1 = a0(1 :>)
+val a1 = a0(1 :>)
+a1: botkop.numsca.Tensor = [1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> val a2 = a0(0 :> -1)
+a2: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00]
+
+scala> val a3 = a1 - a2
+a3: botkop.numsca.Tensor = [1.00,  1.00,  1.00,  1.00,  1.00,  1.00,  1.00,  1.00,  1.00]
+
+scala> ta(:>, 5 :>)
+res19: botkop.numsca.Tensor = [5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> ta(:>, -3 :>)
+res4: botkop.numsca.Tensor = [7.00,  8.00,  9.00]
+```

@@ -186,22 +186,22 @@ package object numsca {
 
     def gt(t1: Tensor, t2: Tensor): Tensor = {
       val Seq(ba1, ba2) = tbc(t1, t2)
-      new Tensor(ba1.gt(ba2))
+      new Tensor(ba1.gt(ba2), true)
     }
 
     def lt(t1: Tensor, t2: Tensor): Tensor = {
       val Seq(ba1, ba2) = tbc(t1, t2)
-      new Tensor(ba1.lt(ba2))
+      new Tensor(ba1.lt(ba2), true)
     }
 
     def eq(t1: Tensor, t2: Tensor): Tensor = {
       val Seq(ba1, ba2) = tbc(t1, t2)
-      new Tensor(ba1.eq(ba2))
+      new Tensor(ba1.eq(ba2), true)
     }
 
     def neq(t1: Tensor, t2: Tensor): Tensor = {
       val Seq(ba1, ba2) = tbc(t1, t2)
-      new Tensor(ba1.neq(ba2))
+      new Tensor(ba1.neq(ba2), true)
     }
 
     def max(t1: Tensor, t2: Tensor): Tensor = {

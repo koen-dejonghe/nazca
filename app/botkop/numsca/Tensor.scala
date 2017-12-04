@@ -216,6 +216,7 @@ object Tensor {
 
   implicit def selectionToTensor(ts: TensorSelection): Tensor =
     ts.asTensor
+
 }
 
 case class TensorSelection(t: Tensor,

@@ -358,6 +358,7 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     ns.rand.setSeed(231)
 
+    // 1 on 1 correlation between 1st column of x and outcome y
     val x = ns
       .array( //
           0, 0, 1, //
@@ -366,6 +367,7 @@ class NumscaSpec extends FlatSpec with Matchers {
           0, 1, 1)
       .reshape(4, 3)
     val y = ns.array(0, 1, 1, 0).T
+
     val w0 = 2 * ns.rand(3, 4) - 1
     val w1 = 2 * ns.rand(4, 1) - 1
 
@@ -373,7 +375,8 @@ class NumscaSpec extends FlatSpec with Matchers {
       val l1 = 1 / (1 + ns.exp(-ns.dot(x, w0)))
       val l2 = 1 / (1 + ns.exp(-ns.dot(l1, w1)))
 
-      if (j % 1000 == 0) println(s"$j: $l2")
+      val l2_error = ns.mean(ns.abs(y - l2)).squeeze()
+      if (j % 1000 == 0) println(s"$j: pred: $l2 error: $l2_error")
 
       val l2_delta = (y - l2) * (l2 * (1 - l2))
       val l1_delta = l2_delta.dot(w1.T) * (l1 * (1 - l1))
@@ -387,17 +390,20 @@ class NumscaSpec extends FlatSpec with Matchers {
       l2
     }
 
-    val p1 = predict(Tensor(0, 0, 0))
-    assert(math.round(p1.squeeze()) == 0)
+    // unseen x's
 
-    val p2 = predict(Tensor(0, 1, 0))
-    assert(math.round(p2.squeeze()) == 0)
+    val unseen_x = Tensor( //
+        0, 0, 0, //
+        0, 1, 0, //
+        1, 0, 0, //
+        1, 1, 0 //
+        ).reshape(4, 3)
 
-    val p3 = predict(Tensor(1, 0, 0))
-    assert(math.round(p3.squeeze()) == 1)
+    val unseen_y = Tensor(0, 0, 1, 1).T
 
-    val p4 = predict(Tensor(1, 1, 0))
-    assert(math.round(p4.squeeze()) == 1)
+    val p = ns.round(predict(unseen_x))
+
+    assert(ns.all(p == unseen_y))
 
   }
 

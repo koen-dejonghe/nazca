@@ -33,10 +33,6 @@ import ns.Tensor._
 scala> Tensor(3,2,1,0)
 [3.00,  2.00,  1.00,  0.00]
 
-scala> val ta: Tensor = ns.arange(10).reshape(2, 5)
-[[0.00,  1.00,  2.00,  3.00,  4.00],
- [5.00,  6.00,  7.00,  8.00,  9.00]]
- 
 scala> ns.zeros(3, 3)
 [[0.00,  0.00,  0.00],
  [0.00,  0.00,  0.00],
@@ -46,9 +42,63 @@ scala> ns.ones(3, 2)
 [[1.00,  1.00],
  [1.00,  1.00],
  [1.00,  1.00]]
+ 
+scala> val ta: Tensor = ns.arange(10)
+[0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 
-
+scala> val tb: Tensor = ns.reshape(ns.arange(9), 3, 3)
+[[0.00,  1.00,  2.00],
+ [3.00,  4.00,  5.00],
+ [6.00,  7.00,  8.00]]
+ 
+ scala> val tc: Tensor = ns.reshape(ns.arange(2 * 3 * 4), 2, 3, 4)
+ [[[0.00,  1.00,  2.00,  3.00],
+   [4.00,  5.00,  6.00,  7.00],
+   [8.00,  9.00,  10.00,  11.00]],
+ 
+  [[12.00,  13.00,  14.00,  15.00],
+   [16.00,  17.00,  18.00,  19.00],
+   [20.00,  21.00,  22.00,  23.00]]]
 ```
 
+## Access
+Single element
+```scala
+scala> ta(0)
+res10: botkop.numsca.Tensor = 0.00
 
+scala> tc(0, 1, 2)
+res14: botkop.numsca.Tensor = 6.00
+```
+Get the value of a single element Tensor:
+```scala
+scala> ta(0).squeeze()
+res11: Double = 0.0
+```
+Slice
+```scala
+scala> tc(0)
+res7: botkop.numsca.Tensor =
+[[0.00,  1.00,  2.00,  3.00],
+ [4.00,  5.00,  6.00,  7.00],
+ [8.00,  9.00,  10.00,  11.00]]
+ 
+scala> tc(0, 1)
+res8: botkop.numsca.Tensor = [4.00,  5.00,  6.00,  7.00]
+```
+
+## Update
+In place
+```scala
+scala> val t = ta.copy()
+t: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> t(3) := -5
+scala> t
+res16: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  -5.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> t(0) += 7
+scala> t
+res18: botkop.numsca.Tensor = [7.00,  1.00,  2.00,  -5.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+```
 

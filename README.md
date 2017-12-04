@@ -114,7 +114,6 @@ Single dimension
 
 ```scala
 scala> val a0 = ta.copy().reshape(10, 1)
-val a0 = ta.copy().reshape(10, 1)
 a0: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 
 scala> val a1 = a0(1 :>)
@@ -132,4 +131,25 @@ res19: botkop.numsca.Tensor = [5.00,  6.00,  7.00,  8.00,  9.00]
 
 scala> ta(:>, -3 :>)
 res4: botkop.numsca.Tensor = [7.00,  8.00,  9.00]
+```
+
+Update over a single dimension
+
+```scala
+scala> val t = ta.copy()
+t: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> t(2 :> 5) := -ns.ones(3)
+scala> t
+res6: botkop.numsca.Tensor = [0.00,  1.00,  -1.00,  -1.00,  -1.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> t(2 :> 5) := 33
+scala> t
+res8: botkop.numsca.Tensor = [0.00,  1.00,  33.00,  33.00,  33.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+scala> t(2 :> 5) -= 1
+scala> t
+res10: botkop.numsca.Tensor = [0.00,  1.00,  32.00,  32.00,  32.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+
+
 ```

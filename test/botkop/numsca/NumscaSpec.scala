@@ -83,8 +83,6 @@ class NumscaSpec extends FlatSpec with Matchers {
     // turn into a column vector
     val a0 = ta.copy().reshape(10, 1)
 
-    // todo: this is extremely slow
-
     // A[1:]
     val a1 = a0(1 :>)
 

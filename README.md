@@ -259,7 +259,7 @@ res24: botkop.numsca.Tensor =
  [7.00,  11.00,  13.00],
  [17.00,  19.00,  23.00]]
 ```
-Use as look-up table:
+Use as a look-up table:
 ```scala
 scala> val numSamples = 4
        val numClasses = 3
@@ -268,3 +268,21 @@ scala> val numSamples = 4
        val z: Tensor = x(ns.arange(numSamples), y)
 res26: botkop.numsca.Tensor = [0.00,  4.00,  8.00,  10.00]
 ```
+Update along a single dimension:
+```scala
+scala> val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
+primes: botkop.numsca.Tensor = [2.00,  3.00,  5.00,  7.00,  11.00,  13.00,  17.00,  19.00,  23.00]
+
+scala> val idx = Tensor(3, 4, 1, 2, 2)
+idx: botkop.numsca.Tensor = [3.00,  4.00,  1.00,  2.00,  2.00]
+
+scala> primes(idx) := 0
+
+scala> primes
+res1: botkop.numsca.Tensor = [2.00,  0.00,  0.00,  0.00,  0.00,  13.00,  17.00,  19.00,  23.00]
+```
+Multiple dimensions
+```scala
+
+```
+

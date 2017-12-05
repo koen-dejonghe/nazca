@@ -12,13 +12,15 @@ val w1 = 2 * ns.rand(4, 1) - 1
 for (j <- 0 until 60000) {
   val l1 = 1 / (1 + ns.exp(-ns.dot(x, w0)))
   val l2 = 1 / (1 + ns.exp(-ns.dot(l1, w1)))
-  val l2_error = ns.mean(ns.abs(y - l2)).squeeze()
   val l2_delta = (y - l2) * (l2 * (1 - l2))
   val l1_delta = l2_delta.dot(w1.T) * (l1 * (1 - l1))
   w1 += l1.T.dot(l2_delta)
   w0 += x.T.dot(l1_delta)
 }
 ``` 
+All right, this is 12 lines because in scala you need the closing brace. 
+But otherwise it's pretty much the same.
+
 
 ## Importing numsca
 ```scala
@@ -284,5 +286,54 @@ res1: botkop.numsca.Tensor = [2.00,  0.00,  0.00,  0.00,  0.00,  13.00,  17.00, 
 Multiple dimensions
 ```scala
 
+scala> val a = ns.arange(6).reshape(3, 2) + 1
+a: botkop.numsca.Tensor =
+[[1.00,  2.00],
+ [3.00,  4.00],
+ [5.00,  6.00]]
+
+scala> val s1 = Tensor(0, 1, 2)
+s1: botkop.numsca.Tensor = [0.00,  1.00,  2.00]
+
+scala> val s2 = Tensor(0, 1, 0)
+s2: botkop.numsca.Tensor = [0.00,  1.00,  0.00]
+
+scala> val r1: Tensor = a(s1, s2)
+r1: botkop.numsca.Tensor = [1.00,  4.00,  5.00]
 ```
+An index will be broadcast if needed:
+```scala
+scala> val y = ns.arange(35).reshape(5, 7)
+y: botkop.numsca.Tensor =
+[[0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00],
+ [7.00,  8.00,  9.00,  10.00,  11.00,  12.00,  13.00],
+ [14.00,  15.00,  16.00,  17.00,  18.00,  19.00,  20.00],
+ [21.00,  22.00,  23.00,  24.00,  25.00,  26.00,  27.00],
+ [28.00,  29.00,  30.00,  31.00,  32.00,  33.00,  34.00]]
+
+scala> val r5: Tensor = y(Tensor(0, 2, 4), Tensor(1))
+r5: botkop.numsca.Tensor = [1.00,  15.00,  29.00]
+```
+
+Update along multiple dimensions:
+```scala
+scala>     val a = ns.arange(6).reshape(3, 2) + 1
+a: botkop.numsca.Tensor =
+[[1.00,  2.00],
+ [3.00,  4.00],
+ [5.00,  6.00]]
+
+scala> val s1 = Tensor(1, 1, 2)
+s1: botkop.numsca.Tensor = [1.00,  1.00,  2.00]
+
+scala> val s2 = Tensor(0, 1, 0)
+s2: botkop.numsca.Tensor = [0.00,  1.00,  0.00]
+
+scala> a(s1, s2) := 0
+res1: botkop.numsca.Tensor =
+[[1.00,  2.00],
+ [0.00,  0.00],
+ [0.00,  6.00]]
+```
+
 

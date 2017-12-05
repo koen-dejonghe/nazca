@@ -1,6 +1,9 @@
 package botkop.numsca
 
 import botkop.{numsca => ns}
+import ns._
+import ns.Tensor
+
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.language.postfixOps

@@ -317,7 +317,7 @@ r5: botkop.numsca.Tensor = [1.00,  15.00,  29.00]
 
 Update along multiple dimensions:
 ```scala
-scala>     val a = ns.arange(6).reshape(3, 2) + 1
+scala> val a = ns.arange(6).reshape(3, 2) + 1
 a: botkop.numsca.Tensor =
 [[1.00,  2.00],
  [3.00,  4.00],
@@ -335,5 +335,49 @@ res1: botkop.numsca.Tensor =
  [0.00,  0.00],
  [0.00,  6.00]]
 ```
+## Broadcasting
 
+```scala
+scala> val x = ns.arange(4)
+x: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00]
+
+scala> val xx = x.reshape(4, 1)
+xx: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00]
+
+scala> val y = ns.ones(5)
+y: botkop.numsca.Tensor = [1.00,  1.00,  1.00,  1.00,  1.00]
+
+scala>     val z = ns.ones(3, 4)
+    val z = ns.ones(3, 4)
+[[1.00,  1.00,  1.00,  1.00],
+ [1.00,  1.00,  1.00,  1.00],
+ [1.00,  1.00,  1.00,  1.00]]
+
+scala> (xx + y)
+[[1.00,  1.00,  1.00,  1.00,  1.00],
+ [2.00,  2.00,  2.00,  2.00,  2.00],
+ [3.00,  3.00,  3.00,  3.00,  3.00],
+ [4.00,  4.00,  4.00,  4.00,  4.00]]
+
+scala> x + z
+[[1.00,  2.00,  3.00,  4.00],
+ [1.00,  2.00,  3.00,  4.00],
+ [1.00,  2.00,  3.00,  4.00]]
+```
+Outer sum:
+```scala
+scala> val a = Tensor(0.0, 10.0, 20.0, 30.0).reshape(4, 1)
+a: botkop.numsca.Tensor = [0.00,  10.00,  20.00,  30.00]
+
+scala> val b = Tensor(1.0, 2.0, 3.0)
+b: botkop.numsca.Tensor = [1.00,  2.00,  3.00]
+
+scala> a + b
+res6: botkop.numsca.Tensor =
+[[1.00,  2.00,  3.00],
+ [11.00,  12.00,  13.00],
+ [21.00,  22.00,  23.00],
+ [31.00,  32.00,  33.00]]
+
+```
 

@@ -347,7 +347,7 @@ xx: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00]
 scala> val y = ns.ones(5)
 y: botkop.numsca.Tensor = [1.00,  1.00,  1.00,  1.00,  1.00]
 
-scala>     val z = ns.ones(3, 4)
+scala> val z = ns.ones(3, 4)
     val z = ns.ones(3, 4)
 [[1.00,  1.00,  1.00,  1.00],
  [1.00,  1.00,  1.00,  1.00],
@@ -381,3 +381,28 @@ res6: botkop.numsca.Tensor =
 
 ```
 
+Vector Quantization from [EricsBroadcastingDoc](http://scipy.github.io/old-wiki/pages/EricsBroadcastingDoc):
+```scala
+scala> val observation = Tensor(111.0, 188.0)
+
+scala> val codes = Tensor( 102.0, 203.0, 132.0, 193.0, 45.0, 155.0, 57.0, 173.0).reshape(4, 2)
+codes: botkop.numsca.Tensor =
+[[102.00,  203.00],
+ [132.00,  193.00],
+ [45.00,  155.00],
+ [57.00,  173.00]]
+
+scala> val diff = codes - observation
+diff: botkop.numsca.Tensor =
+[[-9.00,  15.00],
+ [21.00,  5.00],
+ [-66.00,  -33.00],
+ [-54.00,  -15.00]]
+
+scala> val dist = ns.sqrt(ns.sum(ns.square(diff), axis = -1))
+dist: botkop.numsca.Tensor = [17.49,  21.59,  73.79,  56.04]
+
+scala>     val nearest = ns.argmin(dist).squeeze()
+nearest: Double = 0.0
+
+```

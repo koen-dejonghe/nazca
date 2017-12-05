@@ -212,6 +212,7 @@ class NumscaSpec extends FlatSpec with Matchers {
 
     assert(ns.arrayEqual(a + b, c))
 
+    // vector quantization
     val observation = Tensor(111.0, 188.0)
     val codes = Tensor(
       102.0, 203.0, //

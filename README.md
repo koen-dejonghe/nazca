@@ -205,11 +205,66 @@ res10: botkop.numsca.Tensor = [2.00,  3.00,  4.00]
 Updating:
 ```scala
 scala> val t = ta.copy()
-scala> t(c) := -7
+scala> t(ta < 5 && ta > 1) := -7
 res6: botkop.numsca.Tensor = [0.00,  1.00,  -7.00,  -7.00,  -7.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 ```
-Multiple dimensions:
+Selection over multiple dimensions:
 ```scala
 scala> val c: Tensor = tc(tc % 5 == 0)
 c: botkop.numsca.Tensor = [0.00,  5.00,  10.00,  15.00,  20.00]
+```
+Updating over multiple dimensions:
+```scala
+scala> val t1 = tc.copy()
+t1: botkop.numsca.Tensor =
+[[[0.00,  1.00,  2.00,  3.00],
+  [4.00,  5.00,  6.00,  7.00],
+  [8.00,  9.00,  10.00,  11.00]],
+
+ [[12.00,  13.00,  14.00,  15.00],
+  [16.00,  17.00,  18.00,  19.00],
+  [20.00,  21.00,  22.00,  23.00]]]
+  
+scala> t1(t1 > 5 && t1 < 15) *= 2
+res21: botkop.numsca.Tensor =
+[[[0.00,  1.00,  2.00,  3.00],
+  [4.00,  5.00,  12.00,  14.00],
+  [16.00,  18.00,  20.00,  22.00]],
+
+ [[24.00,  26.00,  28.00,  15.00],
+  [16.00,  17.00,  18.00,  19.00],
+  [20.00,  21.00,  22.00,  23.00]]]
+```
+### List of location indexing
+```scala
+scala> val primes = Tensor(2, 3, 5, 7, 11, 13, 17, 19, 23)
+
+scala> val idx = Tensor(3, 4, 1, 2, 2)
+
+scala> primes(idx).asTensor
+res23: botkop.numsca.Tensor = [7.00,  11.00,  3.00,  5.00,  5.00]
+
+```
+Reshape according to index:
+```scala
+scala> tb
+res25: botkop.numsca.Tensor =
+[[0.00,  1.00,  2.00],
+ [3.00,  4.00,  5.00],
+ [6.00,  7.00,  8.00]]
+
+scala> primes(tb).asTensor
+res24: botkop.numsca.Tensor =
+[[2.00,  3.00,  5.00],
+ [7.00,  11.00,  13.00],
+ [17.00,  19.00,  23.00]]
+```
+Use as look-up table:
+```scala
+scala> val numSamples = 4
+       val numClasses = 3
+       val x = ns.arange(numSamples * numClasses).reshape(numSamples, numClasses)
+       val y = Tensor(0, 1, 2, 1)
+       val z: Tensor = x(ns.arange(numSamples), y)
+res26: botkop.numsca.Tensor = [0.00,  4.00,  8.00,  10.00]
 ```

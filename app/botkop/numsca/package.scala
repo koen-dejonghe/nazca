@@ -14,6 +14,9 @@ import scala.util.Random
 
 package object numsca {
 
+  implicit def selectionToTensor(ts: TensorSelection): Tensor =
+    ts.asTensor
+
   implicit class NumscaDoubleOps(d: Double) {
     def +(t: Tensor): Tensor = t + d
     def -(t: Tensor): Tensor = -t + d
@@ -31,9 +34,12 @@ package object numsca {
     def :> = NumscaRange(i, None)
   }
 
+  implicit def intToNumscaRange(i: Int): NumscaRange =
+    NumscaRange(i, Some(i + 1))
+
   def rand: rng.Random = Nd4j.getRandom
 
-  def array(ds: Double*) = Tensor(ds:_*)
+  def array(ds: Double*) = Tensor(ds: _*)
   def zeros(shape: Int*): Tensor = new Tensor(Nd4j.zeros(shape: _*))
   def zeros(shape: Array[Int]): Tensor = zeros(shape: _*)
   def zerosLike(t: Tensor): Tensor = zeros(t.shape)

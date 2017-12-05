@@ -23,8 +23,6 @@ for (j <- 0 until 60000) {
 ## Importing numsca
 ```scala
 import botkop.{numsca => ns}
-import ns._
-import ns.Tensor._
 ```
 
 ## Creating a Tensor
@@ -110,14 +108,20 @@ a2: botkop.numsca.Tensor = [0.00,  2.00,  4.00,  6.00,  8.00,  10.00,  12.00,  1
 ```
 
 ## Slicing
-Single dimension
+Note: 
+- step size is not implemented.
+- python notation ```t[:3]``` must be written as ```t(0 :> 3)``` or ```t(:>(3))``` 
+- negative indexing is supported
+- ellipsis is not implemented
+
+### Single dimension
+#### Slice over a single dimension
 
 ```scala
 scala> val a0 = ta.copy().reshape(10, 1)
 a0: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 
 scala> val a1 = a0(1 :>)
-val a1 = a0(1 :>)
 a1: botkop.numsca.Tensor = [1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 
 scala> val a2 = a0(0 :> -1)
@@ -133,23 +137,79 @@ scala> ta(:>, -3 :>)
 res4: botkop.numsca.Tensor = [7.00,  8.00,  9.00]
 ```
 
-Update over a single dimension
+#### Update single dimension slice
 
 ```scala
 scala> val t = ta.copy()
 t: botkop.numsca.Tensor = [0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00]
-
+```
+Assign another tensor
+```scala
 scala> t(2 :> 5) := -ns.ones(3)
 scala> t
 res6: botkop.numsca.Tensor = [0.00,  1.00,  -1.00,  -1.00,  -1.00,  5.00,  6.00,  7.00,  8.00,  9.00]
-
+```
+Assign a value
+```scala
 scala> t(2 :> 5) := 33
 scala> t
 res8: botkop.numsca.Tensor = [0.00,  1.00,  33.00,  33.00,  33.00,  5.00,  6.00,  7.00,  8.00,  9.00]
-
+```
+Update in place
+```scala
 scala> t(2 :> 5) -= 1
 scala> t
 res10: botkop.numsca.Tensor = [0.00,  1.00,  32.00,  32.00,  32.00,  5.00,  6.00,  7.00,  8.00,  9.00]
 
+```
 
+### Multidimensional slices
+```scala
+scala> tb
+res11: botkop.numsca.Tensor =
+[[0.00,  1.00,  2.00],
+ [3.00,  4.00,  5.00],
+ [6.00,  7.00,  8.00]]
+ 
+scala> tb(2:>, :>)
+res15: botkop.numsca.Tensor = [6.00,  7.00,  8.00]
+```
+Mixed range/integer indexing. Note that integers are implicitly translated to ranges, 
+and this differs from python. 
+```scala
+scala> tb(1, 0 :> -1)
+res1: botkop.numsca.Tensor = [3.00,  4.00]
+```
+
+## Fancy indexing
+### Boolean indexing
+```scala
+scala> val c = ta < 5 && ta > 1
+c: botkop.numsca.Tensor = [0.00,  0.00,  1.00,  1.00,  1.00,  0.00,  0.00,  0.00,  0.00,  0.00]
+```
+This returns a TensorSelection:
+```scala
+scala> val d = ta(c)
+d: botkop.numsca.TensorSelection = TensorSelection([0.00,  1.00,  2.00,  3.00,  4.00,  5.00,  6.00,  7.00,  8.00,  9.00],[[I@153ea1aa,None)
+```
+Which is implicitly converted to a Tensor when needed:
+```scala
+scala> val d: Tensor = ta(c)
+d: botkop.numsca.Tensor = [2.00,  3.00,  4.00]
+```
+Or you can force it to become a Tensor:
+```scala
+scala> ta(c).asTensor
+res10: botkop.numsca.Tensor = [2.00,  3.00,  4.00]
+```
+Updating:
+```scala
+scala> val t = ta.copy()
+scala> t(c) := -7
+res6: botkop.numsca.Tensor = [0.00,  1.00,  -7.00,  -7.00,  -7.00,  5.00,  6.00,  7.00,  8.00,  9.00]
+```
+Multiple dimensions:
+```scala
+scala> val c: Tensor = tc(tc % 5 == 0)
+c: botkop.numsca.Tensor = [0.00,  5.00,  10.00,  15.00,  20.00]
 ```

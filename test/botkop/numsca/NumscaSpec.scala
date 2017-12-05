@@ -3,8 +3,6 @@ package botkop.numsca
 import botkop.{numsca => ns}
 import org.scalatest.{FlatSpec, Matchers}
 
-import ns.Tensor._
-
 import scala.language.postfixOps
 
 class NumscaSpec extends FlatSpec with Matchers {
@@ -138,6 +136,16 @@ class NumscaSpec extends FlatSpec with Matchers {
     val s = 3 :> -1
     assert(ns.arrayEqual(ta(:>, s), Tensor(3.00, 4.00, 5.00, 6.00, 7.00, 8.00)))
 
+  }
+
+  it should "slice over multiple dimensions" in {
+    val b1 = tb(0 :> 2, :>)
+    assert(ns.arrayEqual(b1, Tensor(0, 1, 2, 3, 4, 5).reshape(2, 3)))
+  }
+
+  it should "slice over multiple dimensions with integer indexing" in {
+    val b2 = tb(1, 0 :> -1)
+    assert(ns.arrayEqual(b2, Tensor(3.00, 4.00)))
   }
 
   it should "broadcast with another tensor" in {

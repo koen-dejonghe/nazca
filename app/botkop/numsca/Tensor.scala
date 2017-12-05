@@ -214,9 +214,6 @@ object Tensor {
 
   def apply(data: Double*): Tensor = Tensor(data.toArray)
 
-  implicit def selectionToTensor(ts: TensorSelection): Tensor =
-    ts.asTensor
-
 }
 
 case class TensorSelection(t: Tensor,
